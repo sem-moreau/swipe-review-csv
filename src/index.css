@@ -1,0 +1,74 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter var', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-bg: #0b0c10;
+  --color-surface: #14161d;
+  --color-surface-raised: #1b1e27;
+  --color-border: #2a2d38;
+  --color-text: #f2f3f7;
+  --color-text-muted: #9195a5;
+  --color-text-faint: #62667a;
+
+  --color-approve: #34d399;
+  --color-approve-strong: #10b981;
+  --color-reject: #fb7185;
+  --color-reject-strong: #f43f5e;
+
+  --color-accent: #818cf8;
+  --color-accent-strong: #6366f1;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+::selection {
+  background: var(--color-accent-strong);
+  color: white;
+}
+
+/* subtle scrollbar for desktop mapping screen */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
