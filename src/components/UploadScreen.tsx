@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { parseFiles } from '../lib/csv';
 import type { ParsedCsv } from '../lib/csv';
+import { AccountPicker } from './AccountPicker';
 
 interface Props {
   onParsed: (parsed: ParsedCsv) => void;
@@ -55,6 +56,8 @@ export function UploadScreen({ onParsed, resumeBanner }: Props) {
         </div>
 
         {resumeBanner}
+
+        <AccountPicker onParsed={onParsed} />
 
         <label
           onDragOver={(e) => {

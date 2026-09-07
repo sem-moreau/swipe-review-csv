@@ -7,9 +7,9 @@ export interface ParsedCsv {
   fileNames: string[];
 }
 
-function parseSingleFile(file: File): Promise<{ headers: string[]; rows: CsvRow[] }> {
+function parseSource(source: File | string): Promise<{ headers: string[]; rows: CsvRow[] }> {
   return new Promise((resolve, reject) => {
-    Papa.parse<CsvRow>(file, {
+    Papa.parse<CsvRow>(source as File, {
       header: true,
       skipEmptyLines: 'greedy',
       complete: (results) => {
@@ -24,9 +24,7 @@ function parseSingleFile(file: File): Promise<{ headers: string[]; rows: CsvRow[
   });
 }
 
-export async function parseFiles(files: File[]): Promise<ParsedCsv> {
-  const results = await Promise.all(files.map(parseSingleFile));
-
+function mergeParsed(results: { headers: string[]; rows: CsvRow[] }[], fileNames: string[]): ParsedCsv {
   const headerOrder: string[] = [];
   const seen = new Set<string>();
   for (const r of results) {
@@ -47,7 +45,17 @@ export async function parseFiles(files: File[]): Promise<ParsedCsv> {
     }
   }
 
-  return { headers: headerOrder, rows, fileNames: files.map((f) => f.name) };
+  return { headers: headerOrder, rows, fileNames };
+}
+
+export async function parseFiles(files: File[]): Promise<ParsedCsv> {
+  const results = await Promise.all(files.map(parseSource));
+  return mergeParsed(results, files.map((f) => f.name));
+}
+
+export async function parseCsvText(text: string, fileName: string): Promise<ParsedCsv> {
+  const result = await parseSource(text);
+  return mergeParsed([result], [fileName]);
 }
 
 export type ExportMode = 'approved' | 'rejected' | 'later' | 'all';
