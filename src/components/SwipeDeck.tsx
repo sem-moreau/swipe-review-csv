@@ -93,7 +93,7 @@ export function SwipeDeck({ rows, headers, mapping, enrichment, decisions, curre
           />
         </div>
 
-        <div className="relative flex-1" style={{ minHeight: 420 }}>
+        <div className="relative flex-1" style={{ minHeight: 540 }}>
           {visibleIndices
             .slice()
             .reverse()
@@ -128,15 +128,6 @@ export function SwipeDeck({ rows, headers, mapping, enrichment, decisions, curre
             </svg>
           </button>
           <button
-            onClick={() => triggerSwipe('right')}
-            aria-label="Goedkeuren"
-            className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[color:var(--color-approve)]/40 bg-[color:var(--color-surface)] text-[color:var(--color-approve)] shadow-lg shadow-black/20 transition-transform active:scale-90"
-          >
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button
             onClick={() => triggerSwipe('down')}
             aria-label="Nog een keer bekijken"
             title="Nog een keer bekijken"
@@ -144,6 +135,15 @@ export function SwipeDeck({ rows, headers, mapping, enrichment, decisions, curre
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <button
+            onClick={() => triggerSwipe('right')}
+            aria-label="Goedkeuren"
+            className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[color:var(--color-approve)]/40 bg-[color:var(--color-surface)] text-[color:var(--color-approve)] shadow-lg shadow-black/20 transition-transform active:scale-90"
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>

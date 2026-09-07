@@ -103,7 +103,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
           </>
         )}
 
-        <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-6 pt-8">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-6 pt-8">
           {card.avatarUrl && !avatarFailed ? (
             <img
               src={card.avatarUrl}
@@ -128,7 +128,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
           )}
 
           {card.headline && (
-            <p className="mt-1.5 line-clamp-3 text-[15px] font-medium leading-snug text-[color:var(--color-text-muted)]">{card.headline}</p>
+            <p className="mt-1.5 text-[15px] font-medium leading-snug text-[color:var(--color-text-muted)]">{card.headline}</p>
           )}
 
           {(card.industry || card.companySize) && (
@@ -151,14 +151,14 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
           )}
 
           {card.notes && (
-            <div className="mt-4 overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
+            <div className="mt-4 rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
               <p className="text-[13px] font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Notities</p>
-              <p className="mt-1 line-clamp-6 text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.notes}</p>
+              <p className="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.notes}</p>
             </div>
           )}
 
           {card.bio && (
-            <p className="mt-4 line-clamp-6 text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.bio}</p>
+            <p className="mt-4 whitespace-pre-wrap text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.bio}</p>
           )}
 
           {(card.supply?.length || card.demand?.length) ? (
