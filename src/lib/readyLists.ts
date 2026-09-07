@@ -1,7 +1,6 @@
 export interface ReadyList {
   id: string;
   label: string;
-  file: string;
 }
 
 export interface Account {
@@ -10,17 +9,17 @@ export interface Account {
   lists: ReadyList[];
 }
 
-const FUNNELS: Omit<ReadyList, 'file'>[] = [
-  { id: 'novanext-vip-2027', label: 'NovaNext VIP 2027' },
-  { id: 'fw-ap-fundraising', label: 'FW/AP Fundraising' },
-];
-
-function accountLists(accountId: string): ReadyList[] {
-  return FUNNELS.map((f) => ({ ...f, file: `${import.meta.env.BASE_URL}lists/${accountId}/${f.id}.csv` }));
+interface Manifest {
+  accounts: Account[];
 }
 
-export const ACCOUNTS: Account[] = [
-  { id: 'kauan', name: 'Kauan', lists: accountLists('kauan') },
-  { id: 'joey', name: 'Joey', lists: accountLists('joey') },
-  { id: 'sem', name: 'Sem', lists: accountLists('sem') },
-];
+export function listFileUrl(accountId: string, listId: string): string {
+  return `${import.meta.env.BASE_URL}lists/${accountId}/${listId}.csv`;
+}
+
+export async function loadAccounts(): Promise<Account[]> {
+  const res = await fetch(`${import.meta.env.BASE_URL}lists/manifest.json`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Kon manifest.json niet laden (${res.status})`);
+  const data = (await res.json()) as Manifest;
+  return data.accounts;
+}

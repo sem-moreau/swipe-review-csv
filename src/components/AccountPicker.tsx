@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { ACCOUNTS } from '../lib/readyLists';
+import { useEffect, useState } from 'react';
+import { loadAccounts, listFileUrl } from '../lib/readyLists';
+import type { Account } from '../lib/readyLists';
 import { parseCsvText } from '../lib/csv';
 import type { ParsedCsv } from '../lib/csv';
 
@@ -8,17 +9,24 @@ interface Props {
 }
 
 export function AccountPicker({ onParsed }: Props) {
+  const [accounts, setAccounts] = useState<Account[] | null>(null);
   const [openAccountId, setOpenAccountId] = useState<string | null>(null);
   const [loadingListId, setLoadingListId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const openAccount = ACCOUNTS.find((a) => a.id === openAccountId);
+  useEffect(() => {
+    loadAccounts()
+      .then(setAccounts)
+      .catch(() => setAccounts([]));
+  }, []);
 
-  const handlePickList = async (listId: string, listLabel: string, file: string) => {
+  const openAccount = accounts?.find((a) => a.id === openAccountId);
+
+  const handlePickList = async (accountId: string, listId: string, listLabel: string) => {
     setError(null);
     setLoadingListId(listId);
     try {
-      const res = await fetch(file);
+      const res = await fetch(listFileUrl(accountId, listId));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       const parsed = await parseCsvText(text, listLabel);
@@ -34,12 +42,14 @@ export function AccountPicker({ onParsed }: Props) {
     }
   };
 
+  if (!accounts || accounts.length === 0) return null;
+
   return (
     <div className="mb-6">
       <p className="mb-2.5 text-xs font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Klaarstaande lijsten</p>
 
       <div className="flex flex-wrap gap-2">
-        {ACCOUNTS.map((account) => (
+        {accounts.map((account) => (
           <button
             key={account.id}
             onClick={() => {
@@ -62,7 +72,7 @@ export function AccountPicker({ onParsed }: Props) {
           {openAccount.lists.map((list) => (
             <button
               key={list.id}
-              onClick={() => handlePickList(list.id, list.label, list.file)}
+              onClick={() => handlePickList(openAccount.id, list.id, list.label)}
               disabled={loadingListId !== null}
               className="flex items-center justify-between rounded-xl bg-[color:var(--color-surface-raised)] px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition-colors hover:bg-[color:var(--color-accent)]/10 disabled:opacity-50"
             >
