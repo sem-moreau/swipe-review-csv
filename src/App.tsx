@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import type { ColumnMapping, CsvRow, Decision } from './types';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ColumnMapping, CsvRow, Decision, EnrichmentMap } from './types';
 import type { ParsedCsv } from './lib/csv';
 import { autoDetectMapping } from './lib/fieldDetection';
-import { loadData, saveData, loadProgress, saveProgress, clearSession } from './lib/session';
+import { loadData, saveData, loadProgress, saveProgress, loadEnrichment, saveEnrichment, clearSession } from './lib/session';
 import { UploadScreen } from './components/UploadScreen';
 import { ColumnMapper } from './components/ColumnMapper';
+import { EnrichScreen } from './components/EnrichScreen';
 import { SwipeDeck } from './components/SwipeDeck';
 import { ResultsScreen } from './components/ResultsScreen';
 
-type Screen = 'loading' | 'upload' | 'mapping' | 'review' | 'results';
+type Screen = 'loading' | 'upload' | 'mapping' | 'enrich' | 'review' | 'results';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('loading');
@@ -16,13 +17,15 @@ export default function App() {
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<CsvRow[]>([]);
   const [mapping, setMapping] = useState<ColumnMapping>({});
+  const [enrichment, setEnrichment] = useState<EnrichmentMap>({});
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const hydrated = useRef(false);
 
   useEffect(() => {
     (async () => {
-      const [data, progress] = await Promise.all([loadData(), loadProgress()]);
+      const [data, progress, savedEnrichment] = await Promise.all([loadData(), loadProgress(), loadEnrichment()]);
+      setEnrichment(savedEnrichment);
       if (data && data.rows.length > 0) {
         setFileNames(data.fileNames);
         setHeaders(data.headers);
@@ -63,13 +66,26 @@ export default function App() {
 
   const handleConfirmMapping = (confirmedMapping: ColumnMapping) => {
     setMapping(confirmedMapping);
-    setScreen(currentIndex >= rows.length ? 'results' : 'review');
+    if (currentIndex >= rows.length) {
+      setScreen('results');
+    } else if (confirmedMapping.linkedin) {
+      setScreen('enrich');
+    } else {
+      setScreen('review');
+    }
   };
 
-  const handleDecision = (direction: 'left' | 'right') => {
+  const handleEnrichmentComplete = useCallback((result: EnrichmentMap) => {
+    setEnrichment(result);
+    void saveEnrichment(result);
+    setScreen('review');
+  }, []);
+
+  const handleDecision = (direction: 'left' | 'right' | 'down') => {
+    const decision = direction === 'right' ? 'approved' : direction === 'down' ? 'later' : 'rejected';
     setDecisions((prev) => {
       const next = [...prev];
-      next[currentIndex] = direction === 'right' ? 'approved' : 'rejected';
+      next[currentIndex] = decision;
       return next;
     });
     setCurrentIndex((i) => {
@@ -78,6 +94,7 @@ export default function App() {
       return nextIndex;
     });
   };
+
 
   const handleUndo = () => {
     setCurrentIndex((i) => {
@@ -99,6 +116,7 @@ export default function App() {
     setHeaders([]);
     setRows([]);
     setMapping({});
+    setEnrichment({});
     setDecisions([]);
     setCurrentIndex(0);
     setScreen('upload');
@@ -126,12 +144,25 @@ export default function App() {
     );
   }
 
+  if (screen === 'enrich') {
+    return (
+      <EnrichScreen
+        rows={rows}
+        mapping={mapping}
+        existingEnrichment={enrichment}
+        onComplete={handleEnrichmentComplete}
+        onSkip={() => setScreen('review')}
+      />
+    );
+  }
+
   if (screen === 'review') {
     return (
       <SwipeDeck
         rows={rows}
         headers={headers}
         mapping={mapping}
+        enrichment={enrichment}
         decisions={decisions}
         currentIndex={currentIndex}
         onDecision={handleDecision}

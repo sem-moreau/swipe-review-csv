@@ -1,8 +1,9 @@
 import { get, set, del } from 'idb-keyval';
-import type { SwipeData, SwipeProgress } from '../types';
+import type { EnrichmentMap, SwipeData, SwipeProgress } from '../types';
 
 const DATA_KEY = 'swipe-review-data-v1';
 const PROGRESS_KEY = 'swipe-review-progress-v1';
+const ENRICHMENT_KEY = 'swipe-review-enrichment-v1';
 
 export async function loadData(): Promise<SwipeData | null> {
   try {
@@ -36,10 +37,27 @@ export async function saveProgress(progress: SwipeProgress): Promise<void> {
   }
 }
 
+export async function loadEnrichment(): Promise<EnrichmentMap> {
+  try {
+    return (await get<EnrichmentMap>(ENRICHMENT_KEY)) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+export async function saveEnrichment(enrichment: EnrichmentMap): Promise<void> {
+  try {
+    await set(ENRICHMENT_KEY, enrichment);
+  } catch {
+    // ignore
+  }
+}
+
 export async function clearSession(): Promise<void> {
   try {
     await del(DATA_KEY);
     await del(PROGRESS_KEY);
+    await del(ENRICHMENT_KEY);
   } catch {
     // ignore
   }

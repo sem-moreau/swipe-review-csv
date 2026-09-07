@@ -1,4 +1,4 @@
-import type { ColumnMapping, CsvRow } from '../types';
+import type { BizdexTopic, ColumnMapping, CsvRow, EnrichmentRecord } from '../types';
 
 export interface CardModel {
   name: string;
@@ -10,6 +10,11 @@ export interface CardModel {
   companySize?: string;
   notes?: string;
   initials: string;
+  avatarUrl?: string;
+  headline?: string;
+  bio?: string;
+  supply?: BizdexTopic[];
+  demand?: BizdexTopic[];
 }
 
 function clean(v: string | undefined): string | undefined {
@@ -29,7 +34,24 @@ function normalizeUrl(url: string): string {
   return `https://${url}`;
 }
 
-export function buildCardModel(row: CsvRow, mapping: ColumnMapping, headers: string[]): CardModel {
+function locationFromEnrichment(enrichment: EnrichmentRecord | undefined): string | undefined {
+  const loc = enrichment?.person?.location;
+  if (!loc) return undefined;
+  return clean([loc.city, loc.country].filter(Boolean).join(', '));
+}
+
+function industryFromEnrichment(enrichment: EnrichmentRecord | undefined): string | undefined {
+  const industries = enrichment?.person?.signals?.industries;
+  if (!industries || industries.length === 0) return undefined;
+  return industries.slice(0, 3).join(', ');
+}
+
+export function buildCardModel(
+  row: CsvRow,
+  mapping: ColumnMapping,
+  headers: string[],
+  enrichment?: EnrichmentRecord,
+): CardModel {
   let name = clean(mapping.name ? row[mapping.name] : undefined);
 
   if (!name) {
@@ -37,19 +59,27 @@ export function buildCardModel(row: CsvRow, mapping: ColumnMapping, headers: str
     const fallbackHeader = headers.find((h) => !mappedValues.has(h) && clean(row[h]));
     name = fallbackHeader ? clean(row[fallbackHeader]) : undefined;
   }
-  name = name ?? 'Onbekend record';
+  name = name ?? clean(enrichment?.person?.displayName) ?? 'Onbekend record';
 
   const linkedinRaw = clean(mapping.linkedin ? row[mapping.linkedin] : undefined);
+  const title = clean(mapping.title ? row[mapping.title] : undefined);
+  const company = clean(mapping.company ? row[mapping.company] : undefined);
+  const person = enrichment?.status === 'completed' ? enrichment.person : undefined;
 
   return {
     name,
-    title: clean(mapping.title ? row[mapping.title] : undefined),
-    company: clean(mapping.company ? row[mapping.company] : undefined),
-    location: clean(mapping.location ? row[mapping.location] : undefined),
+    title,
+    company,
+    location: clean(mapping.location ? row[mapping.location] : undefined) ?? locationFromEnrichment(enrichment),
     linkedinUrl: linkedinRaw ? normalizeUrl(linkedinRaw) : undefined,
-    industry: clean(mapping.industry ? row[mapping.industry] : undefined),
+    industry: clean(mapping.industry ? row[mapping.industry] : undefined) ?? industryFromEnrichment(enrichment),
     companySize: clean(mapping.companySize ? row[mapping.companySize] : undefined),
     notes: clean(mapping.notes ? row[mapping.notes] : undefined),
     initials: initialsFrom(name),
+    avatarUrl: person?.avatarUrl,
+    headline: !title && !company ? clean(person?.headline) : undefined,
+    bio: clean(person?.bio),
+    supply: enrichment?.supply,
+    demand: enrichment?.demand,
   };
 }

@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "swipe-review-bizdex-proxy",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-01-01",
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMIT",
+      "id": "334a26d8f5804fb68160b0357d859b57"
+    }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://sem-moreau.github.io,http://localhost:5173"
+  }
+}

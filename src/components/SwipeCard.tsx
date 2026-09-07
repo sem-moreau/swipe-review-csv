@@ -1,19 +1,20 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import type { ColumnMapping, CsvRow } from '../types';
+import type { BizdexTopic, ColumnMapping, CsvRow, EnrichmentRecord } from '../types';
 import { buildCardModel } from '../lib/cardFields';
 
 export interface SwipeCardHandle {
-  swipe: (direction: 'left' | 'right') => void;
+  swipe: (direction: 'left' | 'right' | 'down') => void;
 }
 
 interface Props {
   row: CsvRow;
   mapping: ColumnMapping;
   headers: string[];
+  enrichment?: EnrichmentRecord;
   isTop: boolean;
   stackIndex: number;
-  onSwiped: (direction: 'left' | 'right') => void;
+  onSwiped: (direction: 'left' | 'right' | 'down') => void;
 }
 
 const SWIPE_THRESHOLD = 110;
@@ -21,25 +22,31 @@ const VELOCITY_THRESHOLD = 500;
 const MAX_STACK_VISIBLE = 3;
 
 export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
-  { row, mapping, headers, isTop, stackIndex, onSwiped },
+  { row, mapping, headers, enrichment, isTop, stackIndex, onSwiped },
   ref,
 ) {
   const x = useMotionValue(0);
+  const y = useMotionValue(0);
   const rotate = useTransform(x, [-320, 320], [-18, 18]);
   const likeOpacity = useTransform(x, [10, 120], [0, 1]);
   const nopeOpacity = useTransform(x, [-120, -10], [1, 0]);
   const isLeaving = useRef(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   useImperativeHandle(ref, () => ({
-    swipe(direction: 'left' | 'right') {
+    swipe(direction: 'left' | 'right' | 'down') {
       if (isLeaving.current) return;
       isLeaving.current = true;
+      if (direction === 'down') {
+        void animate(y, window.innerHeight * 1.2, { duration: 0.32, ease: [0.32, 0, 0.67, 0] }).then(() => onSwiped(direction));
+        return;
+      }
       const target = direction === 'right' ? window.innerWidth * 1.2 : -window.innerWidth * 1.2;
       void animate(x, target, { duration: 0.32, ease: [0.32, 0, 0.67, 0] }).then(() => onSwiped(direction));
     },
   }));
 
-  const card = buildCardModel(row, mapping, headers);
+  const card = buildCardModel(row, mapping, headers, enrichment);
 
   if (stackIndex >= MAX_STACK_VISIBLE) return null;
 
@@ -53,7 +60,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
         x: isTop ? x : 0,
         rotate: isTop ? rotate : 0,
         scale: isTop ? 1 : stackScale,
-        y: isTop ? 0 : stackY,
+        y: isTop ? y : stackY,
         zIndex: MAX_STACK_VISIBLE - stackIndex,
         touchAction: isTop ? 'pan-y' : 'auto',
       }}
@@ -96,18 +103,33 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
           </>
         )}
 
-        <div className="flex flex-1 flex-col overflow-hidden px-6 pb-6 pt-8">
-          <div className="mb-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[color:var(--color-accent)] to-[color:var(--color-accent-strong)] text-xl font-bold text-white shadow-lg">
-            {card.initials}
-          </div>
+        <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-6 pt-8">
+          {card.avatarUrl && !avatarFailed ? (
+            <img
+              src={card.avatarUrl}
+              onError={() => setAvatarFailed(true)}
+              alt=""
+              className="mb-5 h-16 w-16 shrink-0 rounded-2xl object-cover shadow-lg"
+            />
+          ) : (
+            <div className="mb-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[color:var(--color-accent)] to-[color:var(--color-accent-strong)] text-xl font-bold text-white shadow-lg">
+              {card.initials}
+            </div>
+          )}
 
           <h2 className="text-[26px] font-semibold leading-tight text-[color:var(--color-text)]">{card.name}</h2>
 
-          {(card.title || card.company) && (
+          {(card.title || card.company || card.headline) && (
             <p className="mt-1 text-[16px] text-[color:var(--color-text-muted)]">
-              {card.title}
-              {card.title && card.company ? ' bij ' : ''}
-              {card.company}
+              {card.title || card.company ? (
+                <>
+                  {card.title}
+                  {card.title && card.company ? ' bij ' : ''}
+                  {card.company}
+                </>
+              ) : (
+                card.headline
+              )}
             </p>
           )}
 
@@ -118,11 +140,25 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
           </div>
 
           {card.notes && (
-            <div className="mt-5 flex-1 overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
+            <div className="mt-5 overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
               <p className="text-[13px] font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Notities</p>
               <p className="mt-1 line-clamp-6 text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.notes}</p>
             </div>
           )}
+
+          {card.bio && (
+            <div className="mt-5 overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
+              <p className="text-[13px] font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Over (Bizdex)</p>
+              <p className="mt-1 line-clamp-6 text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.bio}</p>
+            </div>
+          )}
+
+          {(card.supply?.length || card.demand?.length) ? (
+            <div className="mt-5 flex-1 space-y-3">
+              {card.supply && card.supply.length > 0 && <TopicList label="Biedt" topics={card.supply} />}
+              {card.demand && card.demand.length > 0 && <TopicList label="Zoekt" topics={card.demand} />}
+            </div>
+          ) : null}
 
           <div className="mt-auto pt-5">
             {card.linkedinUrl && (
@@ -145,6 +181,25 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
     </motion.div>
   );
 });
+
+function TopicList({ label, topics }: { label: string; topics: BizdexTopic[] }) {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
+      <p className="text-[13px] font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">{label} (Bizdex)</p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {topics.slice(0, 4).map((topic) => (
+          <span
+            key={topic.title}
+            title={topic.description}
+            className="rounded-full bg-[color:var(--color-accent)]/10 px-2.5 py-1 text-xs font-medium text-[color:var(--color-accent)]"
+          >
+            {topic.title}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Badge({ label, icon }: { label: string; icon: 'location' | 'industry' | 'size' }) {
   const icons: Record<typeof icon, React.ReactNode> = {

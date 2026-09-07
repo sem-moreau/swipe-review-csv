@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { ColumnMapping, CsvRow, Decision } from '../types';
+import type { ColumnMapping, CsvRow, Decision, EnrichmentMap } from '../types';
+import { normalizeLinkedinUrl } from '../lib/linkedin';
 import { SwipeCard } from './SwipeCard';
 import type { SwipeCardHandle } from './SwipeCard';
 
@@ -7,21 +8,23 @@ interface Props {
   rows: CsvRow[];
   headers: string[];
   mapping: ColumnMapping;
+  enrichment: EnrichmentMap;
   decisions: Decision[];
   currentIndex: number;
-  onDecision: (direction: 'left' | 'right') => void;
+  onDecision: (direction: 'left' | 'right' | 'down') => void;
   onUndo: () => void;
   onEditMapping: () => void;
 }
 
-export function SwipeDeck({ rows, headers, mapping, decisions, currentIndex, onDecision, onUndo, onEditMapping }: Props) {
+export function SwipeDeck({ rows, headers, mapping, enrichment, decisions, currentIndex, onDecision, onUndo, onEditMapping }: Props) {
   const topCardRef = useRef<SwipeCardHandle>(null);
   const isAnimating = useRef(false);
 
   const total = rows.length;
   const approved = decisions.filter((d) => d === 'approved').length;
   const rejected = decisions.filter((d) => d === 'rejected').length;
-  const reviewed = approved + rejected;
+  const later = decisions.filter((d) => d === 'later').length;
+  const reviewed = approved + rejected + later;
 
   // A card animates out over ~0.3s; ignore extra taps/keys until the next
   // card has actually mounted (currentIndex change), so rapid input can't
@@ -30,7 +33,7 @@ export function SwipeDeck({ rows, headers, mapping, decisions, currentIndex, onD
     isAnimating.current = false;
   }, [currentIndex]);
 
-  const triggerSwipe = useCallback((direction: 'left' | 'right') => {
+  const triggerSwipe = useCallback((direction: 'left' | 'right' | 'down') => {
     if (isAnimating.current) return;
     isAnimating.current = true;
     topCardRef.current?.swipe(direction);
@@ -49,6 +52,9 @@ export function SwipeDeck({ rows, headers, mapping, decisions, currentIndex, onD
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         triggerSwipe('right');
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        triggerSwipe('down');
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -93,6 +99,8 @@ export function SwipeDeck({ rows, headers, mapping, decisions, currentIndex, onD
             .reverse()
             .map((rowIndex) => {
               const stackIndex = rowIndex - currentIndex;
+              const linkedinRaw = mapping.linkedin ? rows[rowIndex][mapping.linkedin]?.trim() : undefined;
+              const rowEnrichment = linkedinRaw ? enrichment[normalizeLinkedinUrl(linkedinRaw)] : undefined;
               return (
                 <SwipeCard
                   key={rowIndex}
@@ -100,6 +108,7 @@ export function SwipeDeck({ rows, headers, mapping, decisions, currentIndex, onD
                   row={rows[rowIndex]}
                   mapping={mapping}
                   headers={headers}
+                  enrichment={rowEnrichment}
                   isTop={stackIndex === 0}
                   stackIndex={stackIndex}
                   onSwiped={onDecision}
@@ -127,6 +136,16 @@ export function SwipeDeck({ rows, headers, mapping, decisions, currentIndex, onD
               <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
+          <button
+            onClick={() => triggerSwipe('down')}
+            aria-label="Nog een keer bekijken"
+            title="Nog een keer bekijken"
+            className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[color:var(--color-text-faint)]/40 bg-[color:var(--color-surface)] text-[color:var(--color-text-faint)] shadow-lg shadow-black/20 transition-transform active:scale-90"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
 
         <div className="mt-4 flex items-center justify-center gap-4 text-xs text-[color:var(--color-text-faint)]">
@@ -136,6 +155,11 @@ export function SwipeDeck({ rows, headers, mapping, decisions, currentIndex, onD
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-[color:var(--color-approve)]" /> {approved} goedgekeurd
           </span>
+          {later > 0 && (
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[color:var(--color-text-faint)]" /> {later} nog een keer
+            </span>
+          )}
         </div>
       </div>
     </div>

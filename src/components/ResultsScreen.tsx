@@ -12,9 +12,10 @@ interface Props {
 export function ResultsScreen({ headers, rows, decisions, onStartOver, onUndo }: Props) {
   const approved = decisions.filter((d) => d === 'approved').length;
   const rejected = decisions.filter((d) => d === 'rejected').length;
+  const later = decisions.filter((d) => d === 'later').length;
   const total = rows.length;
 
-  const handleExport = (mode: 'approved' | 'rejected' | 'all') => {
+  const handleExport = (mode: 'approved' | 'rejected' | 'later' | 'all') => {
     const { csv, filename } = buildExportCsv(headers, rows, decisions, mode);
     downloadCsv(csv, filename);
   };
@@ -30,7 +31,7 @@ export function ResultsScreen({ headers, rows, decisions, onStartOver, onUndo }:
         <h1 className="text-2xl font-semibold text-[color:var(--color-text)]">Klaar met reviewen</h1>
         <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">{total.toLocaleString('nl-NL')} records beoordeeld</p>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
+        <div className={`mt-6 grid gap-3 ${later > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <div className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
             <div className="text-2xl font-bold text-[color:var(--color-approve)]">{approved}</div>
             <div className="text-xs text-[color:var(--color-text-faint)]">goedgekeurd</div>
@@ -39,6 +40,12 @@ export function ResultsScreen({ headers, rows, decisions, onStartOver, onUndo }:
             <div className="text-2xl font-bold text-[color:var(--color-reject)]">{rejected}</div>
             <div className="text-xs text-[color:var(--color-text-faint)]">afgekeurd</div>
           </div>
+          {later > 0 && (
+            <div className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+              <div className="text-2xl font-bold text-[color:var(--color-text-faint)]">{later}</div>
+              <div className="text-xs text-[color:var(--color-text-faint)]">nog een keer</div>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex flex-col gap-2.5">
@@ -56,6 +63,14 @@ export function ResultsScreen({ headers, rows, decisions, onStartOver, onUndo }:
           >
             Download afgekeurd.csv ({rejected})
           </button>
+          {later > 0 && (
+            <button
+              onClick={() => handleExport('later')}
+              className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition-colors hover:bg-[color:var(--color-surface-raised)]"
+            >
+              Download opnieuw-bekijken.csv ({later})
+            </button>
+          )}
           <button
             onClick={() => handleExport('all')}
             className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition-colors hover:bg-[color:var(--color-surface-raised)]"

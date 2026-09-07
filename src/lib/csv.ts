@@ -50,12 +50,19 @@ export async function parseFiles(files: File[]): Promise<ParsedCsv> {
   return { headers: headerOrder, rows, fileNames: files.map((f) => f.name) };
 }
 
-export type ExportMode = 'approved' | 'rejected' | 'all';
+export type ExportMode = 'approved' | 'rejected' | 'later' | 'all';
 
 const STATUS_LABEL: Record<Decision, string> = {
   approved: 'goedgekeurd',
   rejected: 'afgekeurd',
+  later: 'nog een keer bekijken',
   pending: 'niet beoordeeld',
+};
+
+const EXPORT_FILENAMES: Record<Exclude<ExportMode, 'all'>, string> = {
+  approved: 'goedgekeurd.csv',
+  rejected: 'afgekeurd.csv',
+  later: 'opnieuw-bekijken.csv',
 };
 
 export function buildExportCsv(
@@ -71,10 +78,9 @@ export function buildExportCsv(
     return { csv, filename: 'alle-resultaten.csv' };
   }
 
-  const wanted: Decision = mode === 'approved' ? 'approved' : 'rejected';
-  const data = rows.filter((_, i) => decisions[i] === wanted);
+  const data = rows.filter((_, i) => decisions[i] === mode);
   const csv = Papa.unparse({ fields: headers, data });
-  return { csv, filename: mode === 'approved' ? 'goedgekeurd.csv' : 'afgekeurd.csv' };
+  return { csv, filename: EXPORT_FILENAMES[mode] };
 }
 
 export function downloadCsv(csv: string, filename: string) {
