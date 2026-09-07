@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ColumnMapping, CsvRow, EnrichmentMap } from '../types';
-import { BATCH_SIZE, chunk, collectLinkedinUrls, enrichBatch, RateLimitError } from '../lib/enrich';
+import { collectLinkedinUrls, enrichBatch, RateLimitError } from '../lib/enrich';
+
+const CONCURRENCY = 4;
 
 interface Props {
   rows: CsvRow[];
@@ -31,25 +33,31 @@ export function EnrichScreen({ rows, mapping, existingEnrichment, onComplete, on
 
     (async () => {
       const merged: EnrichmentMap = { ...existingEnrichment };
-      const batches = chunk(urls, BATCH_SIZE);
       let failedCount = 0;
+      let stopped = false;
+      let nextIndex = 0;
 
-      for (const batch of batches) {
-        try {
-          const result = await enrichBatch(batch);
-          Object.assign(merged, result);
-        } catch (err) {
-          if (err instanceof RateLimitError) {
-            setRateLimited(true);
-            onComplete(merged);
-            return;
+      async function worker() {
+        while (!stopped) {
+          const i = nextIndex++;
+          if (i >= urls.length) return;
+          try {
+            const result = await enrichBatch([urls[i]]);
+            Object.assign(merged, result);
+          } catch (err) {
+            if (err instanceof RateLimitError) {
+              stopped = true;
+              setRateLimited(true);
+              return;
+            }
+            failedCount += 1;
+            setFailed(failedCount);
           }
-          failedCount += batch.length;
-          setFailed(failedCount);
+          setDone((d) => d + 1);
         }
-        setDone((d) => d + batch.length);
       }
 
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, urls.length) }, worker));
       onComplete(merged);
     })();
   }, [rows, mapping, existingEnrichment, onComplete]);

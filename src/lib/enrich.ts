@@ -2,7 +2,6 @@ import type { ColumnMapping, CsvRow, EnrichmentMap, EnrichmentRecord } from '../
 import { normalizeLinkedinUrl } from './linkedin';
 
 const WORKER_URL = 'https://swipe-review-bizdex-proxy.sem-moreau.workers.dev/enrich';
-export const BATCH_SIZE = 25;
 
 export function collectLinkedinUrls(rows: CsvRow[], mapping: ColumnMapping): string[] {
   if (!mapping.linkedin) return [];
@@ -14,12 +13,6 @@ export function collectLinkedinUrls(rows: CsvRow[], mapping: ColumnMapping): str
   return [...seen];
 }
 
-export function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
-  return out;
-}
-
 interface BizdexBatchResponse {
   results?: Array<EnrichmentRecord & { person?: { linkedinUrl?: string } }>;
   invalidLinkedinUrls?: string[];
@@ -27,7 +20,7 @@ interface BizdexBatchResponse {
 
 export class RateLimitError extends Error {}
 
-const REQUEST_TIMEOUT_MS = 25_000;
+const REQUEST_TIMEOUT_MS = 45_000;
 
 export async function enrichBatch(urls: string[]): Promise<EnrichmentMap> {
   const controller = new AbortController();
