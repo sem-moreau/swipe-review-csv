@@ -109,54 +109,49 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
               src={card.avatarUrl}
               onError={() => setAvatarFailed(true)}
               alt=""
-              className="mb-5 h-16 w-16 shrink-0 rounded-2xl object-cover shadow-lg"
+              className="mb-4 h-16 w-16 shrink-0 rounded-full object-cover shadow-lg"
             />
           ) : (
-            <div className="mb-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[color:var(--color-accent)] to-[color:var(--color-accent-strong)] text-xl font-bold text-white shadow-lg">
+            <div className="mb-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[color:var(--color-accent)] to-[color:var(--color-accent-strong)] text-xl font-bold text-white shadow-lg">
               {card.initials}
             </div>
           )}
 
           <h2 className="text-[26px] font-semibold leading-tight text-[color:var(--color-text)]">{card.name}</h2>
 
-          {(card.title || card.company || card.headline) && (
+          {(card.title || card.company) && (
             <p className="mt-1 text-[16px] text-[color:var(--color-text-muted)]">
-              {card.title || card.company ? (
-                <>
-                  {card.title}
-                  {card.title && card.company ? ' bij ' : ''}
-                  {card.company}
-                </>
-              ) : (
-                card.headline
-              )}
+              {card.title}
+              {card.title && card.company ? ' bij ' : ''}
+              {card.company}
             </p>
           )}
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          {card.headline && (
+            <p className="mt-1 line-clamp-2 text-[14px] leading-snug text-[color:var(--color-text-faint)]">{card.headline}</p>
+          )}
+
+          <div className="mt-3 flex flex-wrap gap-2">
             {card.location && <Badge label={card.location} icon="location" />}
             {card.industry && <Badge label={card.industry} icon="industry" />}
             {card.companySize && <Badge label={card.companySize} icon="size" />}
           </div>
 
           {card.notes && (
-            <div className="mt-5 overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
+            <div className="mt-4 overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
               <p className="text-[13px] font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Notities</p>
               <p className="mt-1 line-clamp-6 text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.notes}</p>
             </div>
           )}
 
           {card.bio && (
-            <div className="mt-5 overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
-              <p className="text-[13px] font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Over (Bizdex)</p>
-              <p className="mt-1 line-clamp-6 text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.bio}</p>
-            </div>
+            <p className="mt-4 line-clamp-6 text-[14px] leading-relaxed text-[color:var(--color-text-muted)]">{card.bio}</p>
           )}
 
           {(card.supply?.length || card.demand?.length) ? (
-            <div className="mt-5 flex-1 space-y-3">
-              {card.supply && card.supply.length > 0 && <TopicList label="Biedt" topics={card.supply} />}
-              {card.demand && card.demand.length > 0 && <TopicList label="Zoekt" topics={card.demand} />}
+            <div className="mt-4 space-y-2">
+              {card.supply && card.supply.length > 0 && <TopicRow label="Biedt" topics={card.supply} />}
+              {card.demand && card.demand.length > 0 && <TopicRow label="Zoekt" topics={card.demand} />}
             </div>
           ) : null}
 
@@ -167,12 +162,12 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
                 target="_blank"
                 rel="noopener noreferrer"
                 onPointerDown={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] px-3 py-2 text-sm font-medium text-[color:var(--color-text)] transition-colors hover:border-[color:var(--color-accent)]"
+                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] px-3.5 py-2 text-sm font-medium text-[color:var(--color-text)] transition-colors hover:border-[color:var(--color-accent)]"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.44-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.59 0 4.26 2.37 4.26 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.11 20.45H3.56V9h3.55v11.45z" />
                 </svg>
-                LinkedIn profiel
+                LinkedIn
               </a>
             )}
           </div>
@@ -182,21 +177,19 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
   );
 });
 
-function TopicList({ label, topics }: { label: string; topics: BizdexTopic[] }) {
+function TopicRow({ label, topics }: { label: string; topics: BizdexTopic[] }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
-      <p className="text-[13px] font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">{label} (Bizdex)</p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {topics.slice(0, 4).map((topic) => (
-          <span
-            key={topic.title}
-            title={topic.description}
-            className="rounded-full bg-[color:var(--color-accent)]/10 px-2.5 py-1 text-xs font-medium text-[color:var(--color-accent)]"
-          >
-            {topic.title}
-          </span>
-        ))}
-      </div>
+    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+      <span className="font-medium text-[color:var(--color-text-faint)]">{label}:</span>
+      {topics.slice(0, 3).map((topic) => (
+        <span
+          key={topic.title}
+          title={topic.description}
+          className="rounded-full bg-[color:var(--color-accent)]/10 px-2.5 py-1 font-medium text-[color:var(--color-accent)]"
+        >
+          {topic.title}
+        </span>
+      ))}
     </div>
   );
 }

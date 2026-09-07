@@ -77,7 +77,7 @@ export function buildCardModel(
     notes: clean(mapping.notes ? row[mapping.notes] : undefined),
     initials: initialsFrom(name),
     avatarUrl: person?.avatarUrl,
-    headline: !title && !company ? clean(person?.headline) : undefined,
+    headline: clean(person?.headline),
     bio: clean(person?.bio),
     supply: enrichment?.supply,
     demand: enrichment?.demand,
