@@ -6,6 +6,7 @@ export type FieldKey =
   | 'company'
   | 'location'
   | 'linkedin'
+  | 'photo'
   | 'industry'
   | 'companySize'
   | 'notes';
@@ -59,6 +60,7 @@ export const FIELD_LABELS: Record<FieldKey, string> = {
   company: 'Bedrijf',
   location: 'Locatie',
   linkedin: 'LinkedIn URL',
+  photo: 'Profielfoto URL',
   industry: 'Branche',
   companySize: 'Bedrijfsgrootte',
   notes: 'Notities',
@@ -70,6 +72,7 @@ export const FIELD_ORDER: FieldKey[] = [
   'company',
   'location',
   'linkedin',
+  'photo',
   'industry',
   'companySize',
   'notes',

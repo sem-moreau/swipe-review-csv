@@ -76,7 +76,7 @@ export function buildCardModel(
     companySize: clean(mapping.companySize ? row[mapping.companySize] : undefined),
     notes: clean(mapping.notes ? row[mapping.notes] : undefined),
     initials: initialsFrom(name),
-    avatarUrl: person?.avatarUrl,
+    avatarUrl: person?.avatarUrl ?? clean(mapping.photo ? row[mapping.photo] : undefined),
     headline: clean(person?.headline),
     bio: clean(person?.bio),
     supply: enrichment?.supply,

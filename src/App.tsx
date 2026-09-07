@@ -36,7 +36,7 @@ export default function App() {
           setCurrentIndex(progress.currentIndex);
           setScreen(progress.currentIndex >= data.rows.length ? 'results' : 'review');
         } else {
-          setMapping(autoDetectMapping(data.headers));
+          setMapping(autoDetectMapping(data.headers, data.rows));
           setScreen('mapping');
         }
       } else {
@@ -53,7 +53,7 @@ export default function App() {
   }, [mapping, decisions, currentIndex, rows.length]);
 
   const handleParsed = (parsed: ParsedCsv) => {
-    const detected = autoDetectMapping(parsed.headers);
+    const detected = autoDetectMapping(parsed.headers, parsed.rows);
     setFileNames(parsed.fileNames);
     setHeaders(parsed.headers);
     setRows(parsed.rows);
