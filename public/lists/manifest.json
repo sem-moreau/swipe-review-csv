@@ -4,32 +4,56 @@
       "id": "kauan",
       "name": "Kauan",
       "lists": [
-        { "id": "novanext-vip-2027", "label": "NovaNext VIP 2027" },
-        { "id": "fw-ap-fundraising", "label": "FW/AP Fundraising" }
+        {
+          "id": "novanext-vip-2027",
+          "label": "NovaNext VIP 2027"
+        },
+        {
+          "id": "fw-ap-fundraising",
+          "label": "FW/AP Fundraising"
+        }
       ]
     },
     {
       "id": "joey",
       "name": "Joey",
       "lists": [
-        { "id": "novanext-vip-2027", "label": "NovaNext VIP 2027" },
-        { "id": "fw-ap-fundraising", "label": "FW/AP Fundraising" }
+        {
+          "id": "novanext-vip-2027",
+          "label": "NovaNext VIP 2027"
+        },
+        {
+          "id": "fw-ap-fundraising",
+          "label": "FW/AP Fundraising"
+        }
       ]
     },
     {
       "id": "sem",
       "name": "Sem",
       "lists": [
-        { "id": "novanext-vip-2027", "label": "NovaNext VIP 2027" },
-        { "id": "fw-ap-fundraising", "label": "FW/AP Fundraising" }
+        {
+          "id": "novanext-vip-2027",
+          "label": "NovaNext VIP 2027"
+        },
+        {
+          "id": "fw-ap-fundraising",
+          "label": "FW/AP Fundraising"
+        }
       ]
     },
     {
       "id": "wilson",
       "name": "Wilson",
       "lists": [
-        { "id": "novanext-vip-2027", "label": "NovaNext VIP 2027" },
-        { "id": "fw-ap-fundraising", "label": "FW/AP Fundraising" }
+        {
+          "id": "novanext-vip-2027",
+          "label": "NovaNext VIP 2027"
+        },
+        {
+          "id": "fw-ap-fundraising",
+          "label": "FW/AP Fundraising"
+        }
       ]
     }
   ]
