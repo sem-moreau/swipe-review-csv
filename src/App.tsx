@@ -8,8 +8,9 @@ import { ColumnMapper } from './components/ColumnMapper';
 import { EnrichScreen } from './components/EnrichScreen';
 import { SwipeDeck } from './components/SwipeDeck';
 import { ResultsScreen } from './components/ResultsScreen';
+import { AdminScreen } from './components/AdminScreen';
 
-type Screen = 'loading' | 'upload' | 'mapping' | 'enrich' | 'review' | 'results';
+type Screen = 'loading' | 'upload' | 'mapping' | 'enrich' | 'review' | 'results' | 'admin';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('loading');
@@ -127,7 +128,11 @@ export default function App() {
   }
 
   if (screen === 'upload') {
-    return <UploadScreen onParsed={handleParsed} />;
+    return <UploadScreen onParsed={handleParsed} onOpenAdmin={() => setScreen('admin')} />;
+  }
+
+  if (screen === 'admin') {
+    return <AdminScreen onClose={() => setScreen('upload')} />;
   }
 
   if (screen === 'mapping') {

@@ -6,9 +6,10 @@ import { AccountPicker } from './AccountPicker';
 interface Props {
   onParsed: (parsed: ParsedCsv) => void;
   resumeBanner?: React.ReactNode;
+  onOpenAdmin?: () => void;
 }
 
-export function UploadScreen({ onParsed, resumeBanner }: Props) {
+export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -42,6 +43,14 @@ export function UploadScreen({ onParsed, resumeBanner }: Props) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-5 py-10">
+      {onOpenAdmin && (
+        <button
+          onClick={onOpenAdmin}
+          className="fixed bottom-4 left-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-text-muted)]"
+        >
+          Admin
+        </button>
+      )}
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[color:var(--color-approve)] to-[color:var(--color-approve-strong)] shadow-lg shadow-emerald-500/20">
