@@ -109,10 +109,10 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
               src={card.avatarUrl}
               onError={() => setAvatarFailed(true)}
               alt=""
-              className="mb-4 h-16 w-16 shrink-0 rounded-full object-cover shadow-lg"
+              className="mb-4 h-24 w-24 shrink-0 rounded-full object-cover shadow-lg ring-2 ring-[color:var(--color-border)]"
             />
           ) : (
-            <div className="mb-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[color:var(--color-accent)] to-[color:var(--color-accent-strong)] text-xl font-bold text-white shadow-lg">
+            <div className="mb-4 flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[color:var(--color-accent)] to-[color:var(--color-accent-strong)] text-2xl font-bold text-white shadow-lg ring-2 ring-[color:var(--color-border)]">
               {card.initials}
             </div>
           )}
@@ -128,14 +128,27 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
           )}
 
           {card.headline && (
-            <p className="mt-1 line-clamp-2 text-[14px] leading-snug text-[color:var(--color-text-faint)]">{card.headline}</p>
+            <p className="mt-1.5 line-clamp-3 text-[15px] font-medium leading-snug text-[color:var(--color-text-muted)]">{card.headline}</p>
           )}
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {card.location && <Badge label={card.location} icon="location" />}
-            {card.industry && <Badge label={card.industry} icon="industry" />}
-            {card.companySize && <Badge label={card.companySize} icon="size" />}
-          </div>
+          {(card.industry || card.companySize) && (
+            <div className="mt-3 flex items-start gap-2 rounded-xl bg-[color:var(--color-accent)]/10 px-3 py-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" className="mt-0.5 shrink-0 text-[color:var(--color-accent)]">
+                <path d="M3 21h18M6 21V9l6-4 6 4v12M9 21v-6h6v6" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round" />
+              </svg>
+              <p className="text-[13px] font-semibold leading-snug text-[color:var(--color-accent)]">
+                {card.industry}
+                {card.industry && card.companySize ? ' · ' : ''}
+                {card.companySize}
+              </p>
+            </div>
+          )}
+
+          {card.location && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge label={card.location} icon="location" />
+            </div>
+          )}
 
           {card.notes && (
             <div className="mt-4 overflow-hidden rounded-2xl bg-[color:var(--color-surface-raised)] p-4">
