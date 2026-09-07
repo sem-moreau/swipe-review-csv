@@ -7,6 +7,7 @@ const port = Number(process.env.PORT) || undefined
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/swipe-review-csv/',
   server: { port },
   preview: { port },
   plugins: [
@@ -24,8 +25,8 @@ export default defineConfig({
         background_color: '#0b0c10',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        start_url: '/swipe-review-csv/',
+        scope: '/swipe-review-csv/',
         icons: [
           {
             src: 'pwa-192x192.png',
