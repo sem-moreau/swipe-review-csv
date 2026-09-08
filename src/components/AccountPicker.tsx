@@ -53,10 +53,10 @@ export function AccountPicker({ onParsed, trailingAction }: Props) {
   return (
     <div className="mb-6">
       {hasAccounts && (
-        <p className="mb-2.5 text-xs font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Ready lists</p>
+        <p className="mb-2.5 text-center text-xs font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Ready lists</p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {accounts?.map((account) => (
           <button
             key={account.id}

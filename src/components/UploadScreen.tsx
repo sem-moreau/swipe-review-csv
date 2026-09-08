@@ -80,21 +80,20 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
             alt="More Ventures"
             className="mb-4 h-16 w-auto"
           />
-          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--color-text)]">Swipe More</h1>
-          <p className="mt-2 text-[15px] leading-relaxed text-[color:var(--color-text-muted)]">
-            Import your lead list and review each record with a swipe. Everything stays on your device.
-          </p>
+          <h1 className="bg-gradient-to-br from-[#ff9633] to-[#e8590c] bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
+            Swipe More
+          </h1>
 
-          <div className="mt-6 flex w-full items-center justify-between gap-6 border-t border-[color:var(--color-border)]/60 pt-5">
+          <div className="mt-6 flex w-full items-center justify-between gap-6 border-t border-[color:var(--color-border)]/60 pt-6">
             <img
               src={`${import.meta.env.BASE_URL}brand/hypernova.png`}
               alt="Hypernova"
-              className="h-5 w-auto opacity-70"
+              className="h-8 w-auto opacity-80"
             />
             <img
               src={`${import.meta.env.BASE_URL}brand/earlybird.svg`}
               alt="Early Bird"
-              className="h-4 w-auto opacity-70"
+              className="h-6 w-auto opacity-80"
             />
           </div>
         </div>
