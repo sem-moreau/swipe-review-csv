@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { parseFiles } from '../lib/csv';
 import type { ParsedCsv } from '../lib/csv';
 import { AccountPicker } from './AccountPicker';
+import { SwipeBackdrop } from './SwipeBackdrop';
 
 interface Props {
   onParsed: (parsed: ParsedCsv, source?: { accountId: string; listId: string }) => void;
@@ -43,27 +44,7 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
 
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-5 py-10">
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
-        <svg
-          className="absolute -left-16 top-[8%] opacity-[0.18] blur-2xl md:-left-10"
-          width="480"
-          height="480"
-          viewBox="0 0 200 200"
-          fill="none"
-        >
-          <line x1="35" y1="35" x2="165" y2="165" stroke="var(--color-reject)" strokeWidth="24" strokeLinecap="round" />
-          <line x1="165" y1="35" x2="35" y2="165" stroke="var(--color-reject)" strokeWidth="24" strokeLinecap="round" />
-        </svg>
-        <svg
-          className="absolute -right-14 bottom-[10%] opacity-[0.18] blur-2xl md:-right-8"
-          width="460"
-          height="420"
-          viewBox="0 0 200 200"
-          fill="none"
-        >
-          <path d="M40 108 L82 152 L166 52" stroke="var(--color-approve)" strokeWidth="26" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
+      <SwipeBackdrop />
 
       {onOpenAdmin && (
         <button

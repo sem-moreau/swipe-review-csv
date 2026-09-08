@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { useMotionValue } from 'framer-motion';
 import type { ColumnMapping, CsvRow, Decision, EnrichmentMap } from '../types';
 import { normalizeLinkedinUrl } from '../lib/linkedin';
 import { SwipeCard } from './SwipeCard';
 import type { SwipeCardHandle } from './SwipeCard';
+import { SwipeBackdrop } from './SwipeBackdrop';
 
 interface Props {
   rows: CsvRow[];
@@ -18,6 +20,7 @@ interface Props {
 
 export function SwipeDeck({ rows, headers, mapping, enrichment, decisions, currentIndex, onDecision, onUndo, onEditMapping }: Props) {
   const topCardRef = useRef<SwipeCardHandle>(null);
+  const dragX = useMotionValue(0);
   const isAnimating = useRef(false);
 
   const total = rows.length;
@@ -31,7 +34,8 @@ export function SwipeDeck({ rows, headers, mapping, enrichment, decisions, curre
   // fire a second animate() on the same motion value and silently drop a swipe.
   useEffect(() => {
     isAnimating.current = false;
-  }, [currentIndex]);
+    dragX.set(0);
+  }, [currentIndex, dragX]);
 
   const triggerSwipe = useCallback((direction: 'left' | 'right' | 'down') => {
     if (isAnimating.current) return;
@@ -64,8 +68,9 @@ export function SwipeDeck({ rows, headers, mapping, enrichment, decisions, curre
   const visibleIndices = [currentIndex, currentIndex + 1, currentIndex + 2].filter((i) => i < total);
 
   return (
-    <div className="flex flex-1 flex-col px-4 pb-6 pt-4 sm:px-6">
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+    <div className="relative flex flex-1 flex-col overflow-hidden px-4 pb-6 pt-4 sm:px-6">
+      <SwipeBackdrop x={dragX} />
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col">
         <div className="mb-3 flex items-center justify-between">
           <button
             onClick={onEditMapping}
@@ -110,6 +115,7 @@ export function SwipeDeck({ rows, headers, mapping, enrichment, decisions, curre
                   headers={headers}
                   enrichment={rowEnrichment}
                   isTop={stackIndex === 0}
+                  xMotion={stackIndex === 0 ? dragX : undefined}
                   stackIndex={stackIndex}
                   onSwiped={onDecision}
                 />

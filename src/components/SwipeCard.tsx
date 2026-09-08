@@ -1,5 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import type { MotionValue } from 'framer-motion';
 import type { BizdexTopic, ColumnMapping, CsvRow, EnrichmentRecord } from '../types';
 import { buildCardModel } from '../lib/cardFields';
 
@@ -14,6 +15,8 @@ interface Props {
   enrichment?: EnrichmentRecord;
   isTop: boolean;
   stackIndex: number;
+  /** Shared with the deck so the backdrop can react to this card's drag. */
+  xMotion?: MotionValue<number>;
   onSwiped: (direction: 'left' | 'right' | 'down') => void;
 }
 
@@ -22,10 +25,11 @@ const VELOCITY_THRESHOLD = 500;
 const MAX_STACK_VISIBLE = 3;
 
 export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
-  { row, mapping, headers, enrichment, isTop, stackIndex, onSwiped },
+  { row, mapping, headers, enrichment, isTop, stackIndex, xMotion, onSwiped },
   ref,
 ) {
-  const x = useMotionValue(0);
+  const localX = useMotionValue(0);
+  const x = xMotion ?? localX;
   const y = useMotionValue(0);
   const rotate = useTransform(x, [-320, 320], [-18, 18]);
   const likeOpacity = useTransform(x, [10, 120], [0, 1]);
