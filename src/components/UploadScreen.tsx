@@ -74,16 +74,29 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
         </button>
       )}
       <div className="relative z-10 w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[color:var(--color-approve)] to-[color:var(--color-approve-strong)] shadow-lg shadow-emerald-500/20">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-              <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+        <div className="mb-7 flex flex-col items-center text-center">
+          <img
+            src={`${import.meta.env.BASE_URL}brand/more-ventures.png`}
+            alt="More Ventures"
+            className="mb-4 h-16 w-auto"
+          />
           <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--color-text)]">Swipe More</h1>
           <p className="mt-2 text-[15px] leading-relaxed text-[color:var(--color-text-muted)]">
             Import your lead list and review each record with a swipe. Everything stays on your device.
           </p>
+
+          <div className="mt-6 flex w-full items-center justify-between gap-6 border-t border-[color:var(--color-border)]/60 pt-5">
+            <img
+              src={`${import.meta.env.BASE_URL}brand/hypernova.png`}
+              alt="Hypernova"
+              className="h-5 w-auto opacity-70"
+            />
+            <img
+              src={`${import.meta.env.BASE_URL}brand/earlybird.svg`}
+              alt="Early Bird"
+              className="h-4 w-auto opacity-70"
+            />
+          </div>
         </div>
 
         {resumeBanner}
