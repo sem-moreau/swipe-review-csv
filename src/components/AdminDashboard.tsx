@@ -11,6 +11,7 @@ import { fetchStoredEnrichment, saveStoredEnrichment } from '../lib/enrichmentSt
 import type { EnrichmentMap } from '../types';
 
 const ENRICH_CONCURRENCY = 4;
+const ENRICH_SAVE_EVERY = 5;
 
 interface Props {
   token: string;
@@ -214,12 +215,20 @@ export function AdminDashboard({ token }: Props) {
               stopped = true;
               rateLimitedFlag = true;
               setEnriching((prev) => (prev ? { ...prev, rateLimited: true } : prev));
-              return;
+              break;
             }
             failedCount += 1;
           }
           doneCount += 1;
           setEnriching({ key, done: doneCount, total: todo.length, failed: failedCount, rateLimited: rateLimitedFlag });
+
+          // Save periodically instead of only at the very end: whoever opens this list
+          // mid-run already sees the profiles done so far, and nothing is lost if the
+          // run is interrupted (tab closed, network drop, rate limit).
+          if (doneCount % ENRICH_SAVE_EVERY === 0) {
+            await saveStoredEnrichment(accountId, listId, merged);
+            void loadListInfo(accountId, listId);
+          }
         }
       };
 
