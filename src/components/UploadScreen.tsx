@@ -78,11 +78,8 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
           <img
             src={`${import.meta.env.BASE_URL}brand/more-ventures.png`}
             alt="More Ventures"
-            className="mb-4 h-16 w-auto"
+            className="h-24 w-auto"
           />
-          <h1 className="bg-gradient-to-br from-[#ff9633] to-[#e8590c] bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
-            Swipe More
-          </h1>
 
           <div className="mt-6 flex w-full items-center justify-between gap-6 border-t border-[color:var(--color-border)]/60 pt-6">
             <img
@@ -99,6 +96,8 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
         </div>
 
         {resumeBanner}
+
+        <h1 className="mb-2.5 text-center text-xs font-medium uppercase tracking-wide text-[color:var(--color-text)]">Swipe More</h1>
 
         <AccountPicker
           onParsed={onParsed}

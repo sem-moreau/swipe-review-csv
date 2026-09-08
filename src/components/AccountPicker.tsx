@@ -53,7 +53,7 @@ export function AccountPicker({ onParsed, trailingAction }: Props) {
   return (
     <div className="mb-6">
       {hasAccounts && (
-        <p className="mb-2.5 text-center text-xs font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Ready lists</p>
+        <p className="mb-2.5 text-center text-xs font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Prepared lists</p>
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-2">
