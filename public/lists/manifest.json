@@ -12,7 +12,8 @@
           "id": "fw-ap-fundraising",
           "label": "FW/AP Fundraising"
         }
-      ]
+      ],
+      "visible": false
     },
     {
       "id": "joey",
