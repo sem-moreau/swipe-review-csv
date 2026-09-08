@@ -74,14 +74,14 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
         </button>
       )}
       <div className="relative z-10 w-full max-w-md">
-        <div className="mb-7 flex flex-col items-center text-center">
+        <div className="mb-3 flex flex-col items-center text-center">
           <img
             src={`${import.meta.env.BASE_URL}brand/more-ventures.png`}
             alt="More Ventures"
-            className="h-24 w-auto"
+            className="h-28 w-auto"
           />
 
-          <div className="mt-6 flex w-full items-center justify-between gap-6 border-t border-[color:var(--color-border)]/60 pt-6">
+          <div className="mt-6 flex w-full items-center justify-between gap-6 border-t border-[color:var(--color-border)]/60 pt-5">
             <img
               src={`${import.meta.env.BASE_URL}brand/hypernova.png`}
               alt="Hypernova"
