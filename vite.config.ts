@@ -17,10 +17,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Swipe Review',
-        short_name: 'Swipe Review',
+        name: 'Swipe More',
+        short_name: 'Swipe More',
         description: 'Swipe-based CSV lead review, entirely on-device.',
-        lang: 'nl',
+        lang: 'en',
         theme_color: '#0b0c10',
         background_color: '#0b0c10',
         display: 'standalone',

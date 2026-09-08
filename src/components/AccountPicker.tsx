@@ -6,9 +6,10 @@ import type { ParsedCsv } from '../lib/csv';
 
 interface Props {
   onParsed: (parsed: ParsedCsv, source?: { accountId: string; listId: string }) => void;
+  trailingAction?: React.ReactNode;
 }
 
-export function AccountPicker({ onParsed }: Props) {
+export function AccountPicker({ onParsed, trailingAction }: Props) {
   const [accounts, setAccounts] = useState<Account[] | null>(null);
   const [openAccountId, setOpenAccountId] = useState<string | null>(null);
   const [loadingListId, setLoadingListId] = useState<string | null>(null);
@@ -27,6 +28,7 @@ export function AccountPicker({ onParsed }: Props) {
   }, []);
 
   const openAccount = accounts?.find((a) => a.id === openAccountId);
+  const hasAccounts = accounts && accounts.length > 0;
 
   const handlePickList = async (accountId: string, listId: string, listLabel: string) => {
     setError(null);
@@ -37,25 +39,25 @@ export function AccountPicker({ onParsed }: Props) {
       const text = await res.text();
       const parsed = await parseCsvText(text, listLabel);
       if (parsed.rows.length === 0) {
-        setError(`"${listLabel}" bevat nog geen leads.`);
+        setError(`"${listLabel}" doesn't have any leads yet.`);
         return;
       }
       onParsed(parsed, { accountId, listId });
     } catch {
-      setError(`Kon "${listLabel}" niet laden.`);
+      setError(`Couldn't load "${listLabel}".`);
     } finally {
       setLoadingListId(null);
     }
   };
 
-  if (!accounts || accounts.length === 0) return null;
-
   return (
     <div className="mb-6">
-      <p className="mb-2.5 text-xs font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Klaarstaande lijsten</p>
+      {hasAccounts && (
+        <p className="mb-2.5 text-xs font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Ready lists</p>
+      )}
 
-      <div className="flex flex-wrap gap-2">
-        {accounts.map((account) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {accounts?.map((account) => (
           <button
             key={account.id}
             onClick={() => {
@@ -71,6 +73,7 @@ export function AccountPicker({ onParsed }: Props) {
             {account.name}
           </button>
         ))}
+        {trailingAction}
       </div>
 
       {openAccount && (
@@ -84,7 +87,7 @@ export function AccountPicker({ onParsed }: Props) {
             >
               <span>{list.label}</span>
               <span className="text-xs text-[color:var(--color-text-faint)]">
-                {loadingListId === list.id ? 'Laden…' : `${openAccount.name} →`}
+                {loadingListId === list.id ? 'Loading…' : `${openAccount.name} →`}
               </span>
             </button>
           ))}
