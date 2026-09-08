@@ -4,7 +4,7 @@ import type { ParsedCsv } from '../lib/csv';
 import { AccountPicker } from './AccountPicker';
 
 interface Props {
-  onParsed: (parsed: ParsedCsv) => void;
+  onParsed: (parsed: ParsedCsv, source?: { accountId: string; listId: string }) => void;
   resumeBanner?: React.ReactNode;
   onOpenAdmin?: () => void;
 }

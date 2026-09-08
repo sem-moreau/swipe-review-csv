@@ -5,7 +5,7 @@ import { parseCsvText } from '../lib/csv';
 import type { ParsedCsv } from '../lib/csv';
 
 interface Props {
-  onParsed: (parsed: ParsedCsv) => void;
+  onParsed: (parsed: ParsedCsv, source?: { accountId: string; listId: string }) => void;
 }
 
 export function AccountPicker({ onParsed }: Props) {
@@ -34,7 +34,7 @@ export function AccountPicker({ onParsed }: Props) {
         setError(`"${listLabel}" bevat nog geen leads.`);
         return;
       }
-      onParsed(parsed);
+      onParsed(parsed, { accountId, listId });
     } catch {
       setError(`Kon "${listLabel}" niet laden.`);
     } finally {

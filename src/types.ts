@@ -20,6 +20,7 @@ export interface SwipeData {
   fileNames: string[];
   headers: string[];
   rows: CsvRow[];
+  activeList?: { accountId: string; listId: string };
 }
 
 export interface SwipeProgress {

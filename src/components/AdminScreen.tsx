@@ -2,14 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { loadAccounts } from '../lib/readyLists';
 import type { Account } from '../lib/readyLists';
 import { getToken, setToken, clearToken, verifyToken, getFile, putFile, slugify } from '../lib/github';
+import { AdminProgress } from './AdminProgress';
 
 interface Props {
   onClose: () => void;
 }
 
 type Status = { kind: 'idle' } | { kind: 'busy'; message: string } | { kind: 'error'; message: string } | { kind: 'success'; message: string };
+type Tab = 'publish' | 'progress';
 
 export function AdminScreen({ onClose }: Props) {
+  const [tab, setTab] = useState<Tab>('publish');
   const [tokenInput, setTokenInput] = useState('');
   const [authed, setAuthed] = useState(false);
   const [checkingToken, setCheckingToken] = useState(true);
@@ -170,6 +173,29 @@ export function AdminScreen({ onClose }: Props) {
               </button>
             </div>
 
+            <div className="flex gap-1 rounded-xl bg-[color:var(--color-surface)] p-1">
+              <button
+                onClick={() => setTab('publish')}
+                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  tab === 'publish' ? 'bg-[color:var(--color-accent)] text-white' : 'text-[color:var(--color-text-muted)]'
+                }`}
+              >
+                Publiceren
+              </button>
+              <button
+                onClick={() => setTab('progress')}
+                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  tab === 'progress' ? 'bg-[color:var(--color-accent)] text-white' : 'text-[color:var(--color-text-muted)]'
+                }`}
+              >
+                Voortgang
+              </button>
+            </div>
+
+            {tab === 'progress' && <AdminProgress />}
+
+            {tab === 'publish' && (
+              <>
             <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-[color:var(--color-text-faint)]">Profiel</label>
               <select
@@ -252,6 +278,8 @@ export function AdminScreen({ onClose }: Props) {
               <div className="rounded-xl border border-[color:var(--color-approve)]/30 bg-[color:var(--color-approve)]/10 px-4 py-3 text-sm text-[color:var(--color-approve)]">
                 {status.message}
               </div>
+            )}
+              </>
             )}
           </div>
         )}

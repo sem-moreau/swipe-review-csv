@@ -9,6 +9,7 @@ import { EnrichScreen } from './components/EnrichScreen';
 import { SwipeDeck } from './components/SwipeDeck';
 import { ResultsScreen } from './components/ResultsScreen';
 import { AdminScreen } from './components/AdminScreen';
+import { reportProgress } from './lib/progress';
 
 type Screen = 'loading' | 'upload' | 'mapping' | 'enrich' | 'review' | 'results' | 'admin';
 
@@ -21,6 +22,7 @@ export default function App() {
   const [enrichment, setEnrichment] = useState<EnrichmentMap>({});
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [activeList, setActiveList] = useState<{ accountId: string; listId: string } | null>(null);
   const hydrated = useRef(false);
 
   useEffect(() => {
@@ -31,6 +33,7 @@ export default function App() {
         setFileNames(data.fileNames);
         setHeaders(data.headers);
         setRows(data.rows);
+        setActiveList(data.activeList ?? null);
         if (progress) {
           setMapping(progress.mapping);
           setDecisions(progress.decisions);
@@ -53,7 +56,13 @@ export default function App() {
     void saveProgress({ version: 1, mapping, decisions, currentIndex, savedAt: Date.now() });
   }, [mapping, decisions, currentIndex, rows.length]);
 
-  const handleParsed = (parsed: ParsedCsv) => {
+  // Report progress for lists picked from the account picker so the Admin dashboard can track it.
+  useEffect(() => {
+    if (!hydrated.current || !activeList || rows.length === 0) return;
+    void reportProgress(activeList.accountId, activeList.listId, rows.length, decisions);
+  }, [activeList, decisions, rows.length]);
+
+  const handleParsed = (parsed: ParsedCsv, source?: { accountId: string; listId: string }) => {
     const detected = autoDetectMapping(parsed.headers, parsed.rows);
     setFileNames(parsed.fileNames);
     setHeaders(parsed.headers);
@@ -61,7 +70,8 @@ export default function App() {
     setMapping(detected);
     setDecisions(new Array(parsed.rows.length).fill('pending'));
     setCurrentIndex(0);
-    void saveData({ version: 1, fileNames: parsed.fileNames, headers: parsed.headers, rows: parsed.rows });
+    setActiveList(source ?? null);
+    void saveData({ version: 1, fileNames: parsed.fileNames, headers: parsed.headers, rows: parsed.rows, activeList: source });
     setScreen('mapping');
   };
 
@@ -120,6 +130,7 @@ export default function App() {
     setEnrichment({});
     setDecisions([]);
     setCurrentIndex(0);
+    setActiveList(null);
     setScreen('upload');
   };
 

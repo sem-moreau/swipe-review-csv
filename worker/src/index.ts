@@ -1,12 +1,22 @@
 export interface Env {
   BIZDEX_API_KEY: string;
   RATE_LIMIT: KVNamespace;
+  PROGRESS: KVNamespace;
   ALLOWED_ORIGINS: string;
 }
 
 const MAX_URLS_PER_REQUEST = 25;
 const MAX_LOOKUPS_PER_DAY_PER_IP = 300;
 const BIZDEX_ENDPOINT = 'https://api.bizdex.app/external/research/person';
+
+const DECISION_VALUES = new Set(['pending', 'approved', 'rejected', 'later']);
+const SLUG_RE = /^[a-z0-9-]+$/;
+
+interface ProgressState {
+  totalRows: number;
+  decisions: string[];
+  updatedAt: string;
+}
 
 function isAllowedOrigin(origin: string, allowedOrigins: string[]): boolean {
   if (allowedOrigins.includes(origin)) return true;
@@ -17,7 +27,7 @@ function corsHeaders(origin: string | null, allowedOrigins: string[]): HeadersIn
   const allowed = origin && isAllowedOrigin(origin, allowedOrigins) ? origin : allowedOrigins[0];
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, PUT, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     Vary: 'Origin',
   };
@@ -53,7 +63,44 @@ export default {
       return json({ error: 'Origin not allowed' }, 403, headers);
     }
 
-    if (request.method !== 'POST' || new URL(request.url).pathname !== '/enrich') {
+    const url = new URL(request.url);
+    const progressMatch = url.pathname.match(/^\/progress\/([^/]+)\/([^/]+)$/);
+    if (progressMatch) {
+      const [, account, list] = progressMatch;
+      if (!SLUG_RE.test(account) || !SLUG_RE.test(list)) {
+        return json({ error: 'Invalid account or list id' }, 400, headers);
+      }
+      const key = `progress:${account}:${list}`;
+
+      if (request.method === 'GET') {
+        const stored = await env.PROGRESS.get(key);
+        if (!stored) return json({ totalRows: 0, decisions: [], updatedAt: null }, 200, headers);
+        return json(JSON.parse(stored), 200, headers);
+      }
+
+      if (request.method === 'PUT') {
+        let body: { totalRows?: unknown; decisions?: unknown };
+        try {
+          body = await request.json();
+        } catch {
+          return json({ error: 'Invalid JSON body' }, 400, headers);
+        }
+        if (
+          typeof body.totalRows !== 'number' ||
+          !Array.isArray(body.decisions) ||
+          !body.decisions.every((d) => typeof d === 'string' && DECISION_VALUES.has(d))
+        ) {
+          return json({ error: 'totalRows must be a number and decisions a string array of valid values' }, 400, headers);
+        }
+        const state: ProgressState = { totalRows: body.totalRows, decisions: body.decisions, updatedAt: new Date().toISOString() };
+        await env.PROGRESS.put(key, JSON.stringify(state));
+        return json(state, 200, headers);
+      }
+
+      return json({ error: 'Method not allowed' }, 405, headers);
+    }
+
+    if (request.method !== 'POST' || url.pathname !== '/enrich') {
       return json({ error: 'Not found' }, 404, headers);
     }
 
