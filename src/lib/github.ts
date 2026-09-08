@@ -31,6 +31,7 @@ function base64ToUtf8(b64: string): string {
 async function api(path: string, token: string, init?: RequestInit): Promise<Response> {
   return fetch(`https://api.github.com/repos/${OWNER}/${REPO}/${path}`, {
     ...init,
+    cache: 'no-store',
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.github+json',
@@ -45,7 +46,9 @@ export async function verifyToken(token: string): Promise<boolean> {
 }
 
 export async function getFile(path: string, token: string): Promise<{ content: string; sha: string } | null> {
-  const res = await api(`contents/${path}?ref=${BRANCH}`, token);
+  // Cache-bust: the Contents API sets a short Cache-Control, and a browser can otherwise
+  // serve a stale sha for an identical URL fetched moments apart (e.g. our own 409 retry).
+  const res = await api(`contents/${path}?ref=${BRANCH}&_=${Date.now()}`, token);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GitHub-fout bij ophalen van ${path} (${res.status})`);
   const data = await res.json();
@@ -66,11 +69,13 @@ async function putFileOnce(path: string, content: string, message: string, token
 
 /**
  * Writes a file via the Contents API. If another write raced us and the sha is stale (409),
- * refetch the current sha and retry once — keeps concurrent admin edits from failing outright.
+ * refetch the current sha and retry — keeps concurrent admin edits from failing outright.
  */
 export async function putFile(path: string, content: string, message: string, token: string, sha?: string): Promise<void> {
   let res = await putFileOnce(path, content, message, token, sha);
-  if (res.status === 409) {
+  let attempt = 0;
+  while (res.status === 409 && attempt < 3) {
+    attempt += 1;
     const latest = await getFile(path, token);
     res = await putFileOnce(path, content, message, token, latest?.sha);
   }

@@ -27,6 +27,7 @@ export function AdminDashboard({ token }: Props) {
   const [info, setInfo] = useState<Record<string, ListInfo>>({});
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [newListName, setNewListName] = useState('');
   const [showNewList, setShowNewList] = useState(false);
   const [showNewAccount, setShowNewAccount] = useState(false);
@@ -54,6 +55,7 @@ export function AdminDashboard({ token }: Props) {
 
   const openAccount = (accountId: string) => {
     setError(null);
+    setSuccess(null);
     setShowNewList(false);
     if (openAccountId === accountId) {
       setOpenAccountId(null);
@@ -77,14 +79,16 @@ export function AdminDashboard({ token }: Props) {
     }
     const key = infoKey(accountId, listId);
     setError(null);
+    setSuccess(null);
     setBusy({ key, message: 'CSV lezen…' });
     try {
       const csvText = await file.text();
-      await publishCsv(accountId, accountName, listId, listLabel, csvText, token, (m) => setBusy({ key, message: m }));
+      const { rowCount } = await publishCsv(accountId, accountName, listId, listLabel, csvText, token, (m) => setBusy({ key, message: m }));
       setNewListName('');
       setShowNewList(false);
       refreshManifest();
       void loadListInfo(accountId, listId);
+      setSuccess(`"${listLabel}" gepubliceerd voor ${accountName} — ${rowCount} leads. Staat over ~30-60s live.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Publiceren mislukt.');
     } finally {
@@ -95,11 +99,13 @@ export function AdminDashboard({ token }: Props) {
   const handleReplaceList = async (accountId: string, accountName: string, listId: string, listLabel: string, file: File) => {
     const key = infoKey(accountId, listId);
     setError(null);
+    setSuccess(null);
     setBusy({ key, message: 'CSV lezen…' });
     try {
       const csvText = await file.text();
-      await publishCsv(accountId, accountName, listId, listLabel, csvText, token, (m) => setBusy({ key, message: m }));
+      const { rowCount } = await publishCsv(accountId, accountName, listId, listLabel, csvText, token, (m) => setBusy({ key, message: m }));
       void loadListInfo(accountId, listId);
+      setSuccess(`"${listLabel}" bijgewerkt voor ${accountName} — ${rowCount} leads. Staat over ~30-60s live.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Publiceren mislukt.');
     } finally {
@@ -333,6 +339,11 @@ export function AdminDashboard({ token }: Props) {
         </div>
       )}
 
+      {success && (
+        <div className="rounded-xl border border-[color:var(--color-approve)]/30 bg-[color:var(--color-approve)]/10 px-4 py-3 text-sm text-[color:var(--color-approve)]">
+          {success}
+        </div>
+      )}
       {error && (
         <div className="rounded-xl border border-[color:var(--color-reject)]/30 bg-[color:var(--color-reject)]/10 px-4 py-3 text-sm text-[color:var(--color-reject)]">
           {error}
