@@ -26,7 +26,7 @@ async function ensureManifestEntry(
   let account = data.accounts.find((a) => a.id === accountId);
   let changed = false;
   if (!account) {
-    account = { id: accountId, name: accountName, lists: [], visible: true };
+    account = { id: accountId, name: accountName, lists: [] };
     data.accounts.push(account);
     changed = true;
   }
@@ -67,16 +67,17 @@ export async function publishCsv(
   return { rowCount: parsed.rows.length };
 }
 
-/** Shows or hides one account's buttons on the public site without touching its lists or data. */
-export async function setAccountVisibility(accountId: string, visible: boolean, token: string): Promise<void> {
+/** Shows or hides one list's button for one account on the public site, without touching its data. */
+export async function setListVisibility(accountId: string, listId: string, visible: boolean, token: string): Promise<void> {
   const { data, sha } = await getManifest(token);
   const account = data.accounts.find((a) => a.id === accountId);
-  if (!account || (account.visible ?? true) === visible) return;
-  account.visible = visible;
+  const list = account?.lists.find((l) => l.id === listId);
+  if (!list || (list.visible ?? true) === visible) return;
+  list.visible = visible;
   await putFile(
     MANIFEST_PATH,
     JSON.stringify(data, null, 2) + '\n',
-    `Admin: ${account.name} ${visible ? 'zichtbaar' : 'verborgen'} maken`,
+    `Admin: "${list.label}" ${visible ? 'zichtbaar' : 'verborgen'} maken voor ${account!.name}`,
     token,
     sha,
   );

@@ -1,14 +1,14 @@
 export interface ReadyList {
   id: string;
   label: string;
+  // Absent/true means visible — keeps existing manifests (written before this field existed) working as-is.
+  visible?: boolean;
 }
 
 export interface Account {
   id: string;
   name: string;
   lists: ReadyList[];
-  // Absent/true means visible — keeps existing manifests (written before this field existed) working as-is.
-  visible?: boolean;
 }
 
 interface Manifest {

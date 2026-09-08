@@ -10,7 +10,8 @@
         },
         {
           "id": "fw-ap-fundraising",
-          "label": "FW/AP Fundraising"
+          "label": "FW/AP Fundraising",
+          "visible": false
         }
       ],
       "visible": false
@@ -40,6 +41,10 @@
         {
           "id": "fw-ap-fundraising",
           "label": "FW/AP Fundraising"
+        },
+        {
+          "id": "early-bird",
+          "label": "Early Bird"
         }
       ]
     },
@@ -53,7 +58,18 @@
         },
         {
           "id": "fw-ap-fundraising",
-          "label": "FW/AP Fundraising"
+          "label": "FW/AP Fundraising",
+          "visible": false
+        }
+      ]
+    },
+    {
+      "id": "mahan",
+      "name": "Mahan",
+      "lists": [
+        {
+          "id": "early-bird",
+          "label": "Early Bird"
         }
       ]
     }
