@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 
 interface Props {
@@ -7,16 +7,23 @@ interface Props {
 }
 
 const RESTING = 0.18;
-const LIT = 0.65;
+const LIT = 0.7;
+const RANGE = 200;
 
 export function SwipeBackdrop({ x }: Props) {
   const idle = useMotionValue(0);
   const drag = x ?? idle;
 
-  const rejectOpacity = useTransform(drag, [-180, -20, 0], [LIT, RESTING, RESTING]);
-  const approveOpacity = useTransform(drag, [0, 20, 180], [RESTING, RESTING, LIT]);
-  const rejectScale = useTransform(drag, [-180, 0], [1.12, 1]);
-  const approveScale = useTransform(drag, [0, 180], [1, 1.12]);
+  // Clamp first so a card flying off-screen doesn't overshoot into a long
+  // fade, then spring so the glow eases in and lingers on the way out
+  // instead of snapping back the moment the card is released.
+  const clamped = useTransform(drag, (v) => Math.max(-RANGE, Math.min(RANGE, v)));
+  const smooth = useSpring(clamped, { stiffness: 130, damping: 26, mass: 0.9, restDelta: 0.5 });
+
+  const rejectOpacity = useTransform(smooth, [-RANGE, -25, 0], [LIT, RESTING, RESTING]);
+  const approveOpacity = useTransform(smooth, [0, 25, RANGE], [RESTING, RESTING, LIT]);
+  const rejectScale = useTransform(smooth, [-RANGE, 0], [1.16, 1]);
+  const approveScale = useTransform(smooth, [0, RANGE], [1, 1.16]);
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
