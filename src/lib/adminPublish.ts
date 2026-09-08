@@ -26,7 +26,7 @@ async function ensureManifestEntry(
   let account = data.accounts.find((a) => a.id === accountId);
   let changed = false;
   if (!account) {
-    account = { id: accountId, name: accountName, lists: [] };
+    account = { id: accountId, name: accountName, lists: [], visible: true };
     data.accounts.push(account);
     changed = true;
   }
@@ -65,4 +65,19 @@ export async function publishCsv(
   await reportProgress(accountId, listId, parsed.rows.length, new Array(parsed.rows.length).fill('pending'));
 
   return { rowCount: parsed.rows.length };
+}
+
+/** Shows or hides one account's buttons on the public site without touching its lists or data. */
+export async function setAccountVisibility(accountId: string, visible: boolean, token: string): Promise<void> {
+  const { data, sha } = await getManifest(token);
+  const account = data.accounts.find((a) => a.id === accountId);
+  if (!account || (account.visible ?? true) === visible) return;
+  account.visible = visible;
+  await putFile(
+    MANIFEST_PATH,
+    JSON.stringify(data, null, 2) + '\n',
+    `Admin: ${account.name} ${visible ? 'zichtbaar' : 'verborgen'} maken`,
+    token,
+    sha,
+  );
 }

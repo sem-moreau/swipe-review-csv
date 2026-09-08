@@ -16,7 +16,7 @@ export function AccountPicker({ onParsed }: Props) {
 
   useEffect(() => {
     loadAccounts()
-      .then(setAccounts)
+      .then((all) => setAccounts(all.filter((a) => a.visible ?? true)))
       .catch(() => setAccounts([]));
   }, []);
 

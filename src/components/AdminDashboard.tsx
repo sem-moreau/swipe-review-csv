@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Account } from '../lib/readyLists';
-import { getManifest, publishCsv } from '../lib/adminPublish';
+import { getManifest, publishCsv, setAccountVisibility } from '../lib/adminPublish';
 import { getFile, slugify } from '../lib/github';
 import { fetchProgress, isComplete, reviewedCount } from '../lib/progress';
 import type { ProgressState } from '../lib/progress';
@@ -150,9 +150,21 @@ export function AdminDashboard({ token }: Props) {
     }
     setShowNewAccount(false);
     setOpenAccountId(id);
-    setAccounts((prev) => [...(prev ?? []), { id, name: newAccountName.trim(), lists: [] }]);
+    setAccounts((prev) => [...(prev ?? []), { id, name: newAccountName.trim(), lists: [], visible: true }]);
     setNewAccountName('');
     setShowNewList(true);
+  };
+
+  const handleToggleVisibility = async (accountId: string, currentlyVisible: boolean) => {
+    setError(null);
+    setAccounts((prev) => prev?.map((a) => (a.id === accountId ? { ...a, visible: !currentlyVisible } : a)) ?? prev);
+    try {
+      await setAccountVisibility(accountId, !currentlyVisible, token);
+    } catch (err) {
+      // Roll back the optimistic update if the write failed.
+      setAccounts((prev) => prev?.map((a) => (a.id === accountId ? { ...a, visible: currentlyVisible } : a)) ?? prev);
+      setError(err instanceof Error ? err.message : 'Zichtbaarheid wijzigen mislukt.');
+    }
   };
 
   const handleDownload = async (accountId: string, accountName: string, listId: string, listLabel: string, mode: 'all' | 'approved' | 'rejected') => {
@@ -257,19 +269,35 @@ export function AdminDashboard({ token }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2">
-        {accounts.map((a) => (
-          <button
-            key={a.id}
-            onClick={() => openAccount(a.id)}
-            className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
-              openAccountId === a.id
-                ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]'
-                : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] hover:border-[color:var(--color-text-faint)]'
-            }`}
-          >
-            {a.name}
-          </button>
-        ))}
+        {accounts.map((a) => {
+          const visible = a.visible ?? true;
+          return (
+            <button
+              key={a.id}
+              onClick={() => openAccount(a.id)}
+              className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
+                openAccountId === a.id
+                  ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]'
+                  : visible
+                    ? 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] hover:border-[color:var(--color-text-faint)]'
+                    : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text-faint)] opacity-60'
+              }`}
+            >
+              {!visible && (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="shrink-0">
+                  <path
+                    d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A9.7 9.7 0 0112 5c5 0 9 4 10 7-.4 1.1-1.1 2.3-2.1 3.4M6.2 6.2C4.3 7.5 2.9 9.3 2 12c1 3 5 7 10 7 1.3 0 2.5-.2 3.6-.6"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+              {a.name}
+            </button>
+          );
+        })}
         <button
           onClick={() => {
             setShowNewAccount((v) => !v);
@@ -297,6 +325,31 @@ export function AdminDashboard({ token }: Props) {
 
       {account && (
         <div className="flex flex-col gap-3 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3">
+          <div className="flex items-center justify-between rounded-xl bg-[color:var(--color-surface-raised)] px-3.5 py-2.5">
+            <div>
+              <p className="text-sm font-medium text-[color:var(--color-text)]">Zichtbaar op de site</p>
+              <p className="text-xs text-[color:var(--color-text-faint)]">
+                {(account.visible ?? true)
+                  ? `${account.name} staat als knop op de startpagina.`
+                  : `${account.name} is verborgen — de knop staat niet op de startpagina.`}
+              </p>
+            </div>
+            <button
+              onClick={() => handleToggleVisibility(account.id, account.visible ?? true)}
+              role="switch"
+              aria-checked={account.visible ?? true}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+                (account.visible ?? true) ? 'bg-[color:var(--color-approve)]' : 'bg-[color:var(--color-border)]'
+              }`}
+            >
+              <span
+                className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  (account.visible ?? true) ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
           {account.lists.length === 0 && (
             <p className="px-1 py-2 text-sm text-[color:var(--color-text-faint)]">Nog geen lijsten voor {account.name}.</p>
           )}
