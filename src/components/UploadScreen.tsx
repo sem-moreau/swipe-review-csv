@@ -79,10 +79,10 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
             setIsDragging(false);
             if (e.dataTransfer.files.length) void handleFiles(e.dataTransfer.files);
           }}
-          className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
+          className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
             isDragging
-              ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
-              : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] hover:border-[color:var(--color-text-faint)]'
+              ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]'
+              : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] hover:border-[color:var(--color-text-faint)]'
           }`}
         >
           <input
@@ -96,7 +96,7 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
               e.target.value = '';
             }}
           />
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="mb-3 text-[color:var(--color-text-faint)]">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
             <path
               d="M12 16V4m0 0L7 9m5-5l5 5M5 20h14"
               stroke="currentColor"
@@ -105,19 +105,16 @@ export function UploadScreen({ onParsed, resumeBanner, onOpenAdmin }: Props) {
               strokeLinejoin="round"
             />
           </svg>
-          <span className="text-[15px] font-medium text-[color:var(--color-text)]">
-            {busy ? 'Bestand verwerken…' : 'Sleep je CSV hierheen'}
-          </span>
-          <span className="mt-1 text-sm text-[color:var(--color-text-faint)]">of tik om te kiezen — meerdere bestanden mag</span>
+          {busy ? 'Bestand verwerken…' : 'Import CSV'}
         </label>
 
         {error && (
-          <div className="mt-4 rounded-xl border border-[color:var(--color-reject)]/30 bg-[color:var(--color-reject)]/10 px-4 py-3 text-sm text-[color:var(--color-reject)]">
+          <div className="mt-3 rounded-xl border border-[color:var(--color-reject)]/30 bg-[color:var(--color-reject)]/10 px-4 py-3 text-sm text-[color:var(--color-reject)]">
             {error}
           </div>
         )}
 
-        <p className="mt-6 text-center text-xs leading-relaxed text-[color:var(--color-text-faint)]">
+        <p className="mt-4 text-center text-xs leading-relaxed text-[color:var(--color-text-faint)]">
           Werkt met LinkedIn Sales Navigator-exports, Apollo-lijsten en generieke CSV's. Niets verlaat je apparaat.
         </p>
       </div>
