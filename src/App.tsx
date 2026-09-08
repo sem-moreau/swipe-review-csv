@@ -10,6 +10,7 @@ import { SwipeDeck } from './components/SwipeDeck';
 import { ResultsScreen } from './components/ResultsScreen';
 import { AdminScreen } from './components/AdminScreen';
 import { reportProgress } from './lib/progress';
+import { fetchStoredEnrichment } from './lib/enrichmentStore';
 
 type Screen = 'loading' | 'upload' | 'mapping' | 'enrich' | 'review' | 'results' | 'admin';
 
@@ -62,7 +63,7 @@ export default function App() {
     void reportProgress(activeList.accountId, activeList.listId, rows.length, decisions);
   }, [activeList, decisions, rows.length]);
 
-  const handleParsed = (parsed: ParsedCsv, source?: { accountId: string; listId: string }) => {
+  const handleParsed = async (parsed: ParsedCsv, source?: { accountId: string; listId: string }) => {
     const detected = autoDetectMapping(parsed.headers, parsed.rows);
     setFileNames(parsed.fileNames);
     setHeaders(parsed.headers);
@@ -72,7 +73,26 @@ export default function App() {
     setCurrentIndex(0);
     setActiveList(source ?? null);
     void saveData({ version: 1, fileNames: parsed.fileNames, headers: parsed.headers, rows: parsed.rows, activeList: source });
-    setScreen('mapping');
+
+    // Ready lists may already have been pre-enriched from the Admin dashboard — fetch that
+    // (and wait for it) before navigating, so the enrich screen sees it on its very first
+    // render instead of racing a screen switch that already happened.
+    if (source) {
+      try {
+        const stored = await fetchStoredEnrichment(source.accountId, source.listId);
+        if (Object.keys(stored).length > 0) {
+          setEnrichment(stored);
+          void saveEnrichment(stored);
+        }
+      } catch {
+        // No pre-fetched enrichment available — the enrich screen will fetch live instead.
+      }
+    }
+
+    // Ready lists come from a known, consistent export format (the Admin CSV), so the
+    // auto-detected mapping can be trusted — skip straight past the confirmation screen.
+    // A manually dropped CSV can be anything, so that one still asks for confirmation.
+    setScreen(source ? (detected.linkedin ? 'enrich' : 'review') : 'mapping');
   };
 
   const handleConfirmMapping = (confirmedMapping: ColumnMapping) => {

@@ -11,6 +11,10 @@
     {
       "binding": "PROGRESS",
       "id": "6182dc01ea854645bcfaea10074a0612"
+    },
+    {
+      "binding": "ENRICHMENT",
+      "id": "f62dd6b62ebd491399da8b905a4e9710"
     }
   ],
   "vars": {

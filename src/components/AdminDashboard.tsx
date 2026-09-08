@@ -5,6 +5,12 @@ import { getFile, slugify } from '../lib/github';
 import { fetchProgress, isComplete, reviewedCount } from '../lib/progress';
 import type { ProgressState } from '../lib/progress';
 import { parseCsvText, buildExportCsv, downloadCsv } from '../lib/csv';
+import { autoDetectMapping } from '../lib/fieldDetection';
+import { collectLinkedinUrls, enrichBatch, RateLimitError } from '../lib/enrich';
+import { fetchStoredEnrichment, saveStoredEnrichment } from '../lib/enrichmentStore';
+import type { EnrichmentMap } from '../types';
+
+const ENRICH_CONCURRENCY = 4;
 
 interface Props {
   token: string;
@@ -12,12 +18,15 @@ interface Props {
 
 interface ListInfo {
   rowCount: number | null;
+  linkedinCount: number | null;
+  enrichedCount: number | null;
   progress: ProgressState | null;
   loading: boolean;
   error: string | null;
 }
 
 type Busy = { key: string; message: string } | null;
+type Enriching = { key: string; done: number; total: number; failed: number; rateLimited: boolean } | null;
 
 const infoKey = (accountId: string, listId: string) => `${accountId}:${listId}`;
 
@@ -26,6 +35,7 @@ export function AdminDashboard({ token }: Props) {
   const [openAccountId, setOpenAccountId] = useState<string | null>(null);
   const [info, setInfo] = useState<Record<string, ListInfo>>({});
   const [busy, setBusy] = useState<Busy>(null);
+  const [enriching, setEnriching] = useState<Enriching>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [newListName, setNewListName] = useState('');
@@ -43,13 +53,29 @@ export function AdminDashboard({ token }: Props) {
 
   const loadListInfo = async (accountId: string, listId: string) => {
     const key = infoKey(accountId, listId);
-    setInfo((prev) => ({ ...prev, [key]: { rowCount: null, progress: null, loading: true, error: null } }));
+    setInfo((prev) => ({
+      ...prev,
+      [key]: { rowCount: null, linkedinCount: null, enrichedCount: null, progress: null, loading: true, error: null },
+    }));
     try {
-      const [csvFile, progress] = await Promise.all([getFile(`public/lists/${accountId}/${listId}.csv`, token), fetchProgress(accountId, listId)]);
-      const rowCount = csvFile ? (await parseCsvText(csvFile.content, listId)).rows.length : 0;
-      setInfo((prev) => ({ ...prev, [key]: { rowCount, progress, loading: false, error: null } }));
+      const [csvFile, progress, stored] = await Promise.all([
+        getFile(`public/lists/${accountId}/${listId}.csv`, token),
+        fetchProgress(accountId, listId),
+        fetchStoredEnrichment(accountId, listId),
+      ]);
+      const parsed = csvFile ? await parseCsvText(csvFile.content, listId) : { headers: [], rows: [] };
+      const mapping = autoDetectMapping(parsed.headers, parsed.rows);
+      const linkedinUrls = collectLinkedinUrls(parsed.rows, mapping);
+      const enrichedCount = linkedinUrls.filter((u) => stored[u]).length;
+      setInfo((prev) => ({
+        ...prev,
+        [key]: { rowCount: parsed.rows.length, linkedinCount: linkedinUrls.length, enrichedCount, progress, loading: false, error: null },
+      }));
     } catch {
-      setInfo((prev) => ({ ...prev, [key]: { rowCount: null, progress: null, loading: false, error: 'Kon status niet laden.' } }));
+      setInfo((prev) => ({
+        ...prev,
+        [key]: { rowCount: null, linkedinCount: null, enrichedCount: null, progress: null, loading: false, error: 'Kon status niet laden.' },
+      }));
     }
   };
 
@@ -147,6 +173,74 @@ export function AdminDashboard({ token }: Props) {
     }
   };
 
+  const handleEnrichList = async (accountId: string, listId: string, listLabel: string) => {
+    const key = infoKey(accountId, listId);
+    setError(null);
+    setSuccess(null);
+    setEnriching({ key, done: 0, total: 0, failed: 0, rateLimited: false });
+    try {
+      const csvFile = await getFile(`public/lists/${accountId}/${listId}.csv`, token);
+      if (!csvFile) throw new Error('CSV niet gevonden');
+      const parsed = await parseCsvText(csvFile.content, listId);
+      const mapping = autoDetectMapping(parsed.headers, parsed.rows);
+      const existing = await fetchStoredEnrichment(accountId, listId);
+
+      const allUrls = collectLinkedinUrls(parsed.rows, mapping);
+      const todo = allUrls.filter((u) => !existing[u]);
+      setEnriching({ key, done: 0, total: todo.length, failed: 0, rateLimited: false });
+
+      if (todo.length === 0) {
+        setSuccess(`"${listLabel}" was al volledig verrijkt (${allUrls.length} profielen).`);
+        setEnriching(null);
+        return;
+      }
+
+      const merged: EnrichmentMap = { ...existing };
+      let failedCount = 0;
+      let stopped = false;
+      let rateLimitedFlag = false;
+      let doneCount = 0;
+      let nextIndex = 0;
+
+      const worker = async () => {
+        while (!stopped) {
+          const i = nextIndex++;
+          if (i >= todo.length) return;
+          try {
+            const result = await enrichBatch([todo[i]]);
+            Object.assign(merged, result);
+          } catch (err) {
+            if (err instanceof RateLimitError) {
+              stopped = true;
+              rateLimitedFlag = true;
+              setEnriching((prev) => (prev ? { ...prev, rateLimited: true } : prev));
+              return;
+            }
+            failedCount += 1;
+          }
+          doneCount += 1;
+          setEnriching({ key, done: doneCount, total: todo.length, failed: failedCount, rateLimited: rateLimitedFlag });
+        }
+      };
+
+      await Promise.all(Array.from({ length: Math.min(ENRICH_CONCURRENCY, todo.length) }, worker));
+      await saveStoredEnrichment(accountId, listId, merged);
+      void loadListInfo(accountId, listId);
+
+      if (rateLimitedFlag) {
+        setError(`Dagelijkse Bizdex-limiet bereikt tijdens "${listLabel}" — ${doneCount}/${todo.length} gelukt. Probeer de rest morgen opnieuw.`);
+      } else if (failedCount > 0) {
+        setSuccess(`"${listLabel}" verrijkt: ${doneCount - failedCount}/${todo.length} gelukt, ${failedCount} niet gevonden.`);
+      } else {
+        setSuccess(`"${listLabel}" volledig verrijkt met Bizdex (${doneCount} profielen).`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verrijken mislukt.');
+    } finally {
+      setEnriching(null);
+    }
+  };
+
   if (!accounts) {
     return <p className="text-sm text-[color:var(--color-text-faint)]">Laden…</p>;
   }
@@ -238,6 +332,24 @@ export function AdminDashboard({ token }: Props) {
                       />
                     </div>
                     <p className="mt-1 text-xs text-[color:var(--color-text-faint)]">{reviewed} / {total} beoordeeld</p>
+
+                    {li && li.linkedinCount !== null && li.linkedinCount > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="shrink-0 text-[color:var(--color-text-faint)]">
+                          <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.44-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.59 0 4.26 2.37 4.26 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.11 20.45H3.56V9h3.55v11.45z" />
+                        </svg>
+                        <p className="text-xs text-[color:var(--color-text-faint)]">
+                          {li.enrichedCount ?? 0} / {li.linkedinCount} verrijkt met Bizdex
+                        </p>
+                      </div>
+                    )}
+                    {enriching?.key === key && (
+                      <div className="mt-2 rounded-lg bg-[color:var(--color-accent)]/10 px-2.5 py-1.5 text-[11px] text-[color:var(--color-accent)]">
+                        Verrijken… {enriching.done}/{enriching.total}
+                        {enriching.failed > 0 ? ` (${enriching.failed} niet gevonden)` : ''}
+                        {enriching.rateLimited ? ' — limiet bereikt' : ''}
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -261,6 +373,19 @@ export function AdminDashboard({ token }: Props) {
                   >
                     {isBusyHere ? busy!.message : prepared ? 'CSV vervangen' : 'CSV toevoegen'}
                   </button>
+                  {prepared && li && li.linkedinCount !== null && li.linkedinCount > 0 && (
+                    <button
+                      onClick={() => handleEnrichList(account.id, list.id, list.label)}
+                      disabled={enriching !== null || busy !== null}
+                      className="rounded-lg border border-[color:var(--color-accent)]/40 px-3 py-1.5 text-xs font-medium text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent)]/10 disabled:opacity-50"
+                    >
+                      {enriching?.key === key
+                        ? 'Bezig…'
+                        : (li.enrichedCount ?? 0) >= li.linkedinCount
+                          ? 'Opnieuw verrijken'
+                          : 'Verrijken met Bizdex'}
+                    </button>
+                  )}
                   {prepared && (
                     <>
                       <button

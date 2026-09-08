@@ -2,11 +2,13 @@ export interface Env {
   BIZDEX_API_KEY: string;
   RATE_LIMIT: KVNamespace;
   PROGRESS: KVNamespace;
+  ENRICHMENT: KVNamespace;
   ALLOWED_ORIGINS: string;
 }
 
 const MAX_URLS_PER_REQUEST = 25;
 const MAX_LOOKUPS_PER_DAY_PER_IP = 300;
+const MAX_ENRICHMENT_BYTES = 8 * 1024 * 1024;
 const BIZDEX_ENDPOINT = 'https://api.bizdex.app/external/research/person';
 
 const DECISION_VALUES = new Set(['pending', 'approved', 'rejected', 'later']);
@@ -95,6 +97,40 @@ export default {
         const state: ProgressState = { totalRows: body.totalRows, decisions: body.decisions, updatedAt: new Date().toISOString() };
         await env.PROGRESS.put(key, JSON.stringify(state));
         return json(state, 200, headers);
+      }
+
+      return json({ error: 'Method not allowed' }, 405, headers);
+    }
+
+    const enrichmentMatch = url.pathname.match(/^\/enrichment\/([^/]+)\/([^/]+)$/);
+    if (enrichmentMatch) {
+      const [, account, list] = enrichmentMatch;
+      if (!SLUG_RE.test(account) || !SLUG_RE.test(list)) {
+        return json({ error: 'Invalid account or list id' }, 400, headers);
+      }
+      const key = `enrichment:${account}:${list}`;
+
+      if (request.method === 'GET') {
+        const stored = await env.ENRICHMENT.get(key);
+        return json(stored ? JSON.parse(stored) : {}, 200, headers);
+      }
+
+      if (request.method === 'PUT') {
+        const raw = await request.text();
+        if (raw.length > MAX_ENRICHMENT_BYTES) {
+          return json({ error: 'Enrichment payload too large' }, 413, headers);
+        }
+        let body: unknown;
+        try {
+          body = JSON.parse(raw);
+        } catch {
+          return json({ error: 'Invalid JSON body' }, 400, headers);
+        }
+        if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+          return json({ error: 'Body must be a JSON object keyed by LinkedIn URL' }, 400, headers);
+        }
+        await env.ENRICHMENT.put(key, raw);
+        return json({ ok: true }, 200, headers);
       }
 
       return json({ error: 'Method not allowed' }, 405, headers);
