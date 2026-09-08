@@ -52,8 +52,8 @@ export async function getFile(path: string, token: string): Promise<{ content: s
   return { content: base64ToUtf8(data.content), sha: data.sha };
 }
 
-export async function putFile(path: string, content: string, message: string, token: string, sha?: string): Promise<void> {
-  const res = await api(`contents/${path}`, token, {
+async function putFileOnce(path: string, content: string, message: string, token: string, sha?: string): Promise<Response> {
+  return api(`contents/${path}`, token, {
     method: 'PUT',
     body: JSON.stringify({
       message,
@@ -62,6 +62,18 @@ export async function putFile(path: string, content: string, message: string, to
       ...(sha ? { sha } : {}),
     }),
   });
+}
+
+/**
+ * Writes a file via the Contents API. If another write raced us and the sha is stale (409),
+ * refetch the current sha and retry once — keeps concurrent admin edits from failing outright.
+ */
+export async function putFile(path: string, content: string, message: string, token: string, sha?: string): Promise<void> {
+  let res = await putFileOnce(path, content, message, token, sha);
+  if (res.status === 409) {
+    const latest = await getFile(path, token);
+    res = await putFileOnce(path, content, message, token, latest?.sha);
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`GitHub-fout bij opslaan van ${path} (${res.status}): ${body.slice(0, 200)}`);
