@@ -83,7 +83,7 @@ export async function setListVisibility(accountId: string, listId: string, visib
   );
 }
 
-/** Checks a list off as done: it drops off the public picker but stays in the manifest/CSV for history. */
+/** Archives a list: it drops off the public picker but stays in the manifest/CSV for history. */
 export async function setListCompleted(accountId: string, listId: string, completed: boolean, token: string): Promise<void> {
   const { data, sha } = await getManifest(token);
   const account = data.accounts.find((a) => a.id === accountId);
@@ -93,7 +93,7 @@ export async function setListCompleted(accountId: string, listId: string, comple
   await putFile(
     MANIFEST_PATH,
     JSON.stringify(data, null, 2) + '\n',
-    `Admin: "${list.label}" ${completed ? 'afronden' : 'heropenen'} voor ${account!.name}`,
+    `Admin: "${list.label}" ${completed ? 'archiveren' : 'heropenen'} voor ${account!.name}`,
     token,
     sha,
   );

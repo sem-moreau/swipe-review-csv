@@ -364,25 +364,9 @@ export function AdminDashboard({ token }: Props) {
                                 : 'bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
                         }`}
                       >
-                        {listCompleted ? 'Afgerond' : !prepared ? 'Nog niet klaargezet' : done ? 'Voltooid' : 'Klaargezet'}
+                        {listCompleted ? 'Gearchiveerd' : !prepared ? 'Nog niet klaargezet' : done ? 'Voltooid' : 'Klaargezet'}
                       </span>
                     )}
-                    <button
-                      onClick={() => handleToggleListCompleted(account.id, list.id, listCompleted)}
-                      title={listCompleted ? `Heropenen voor ${account.name}` : `Afronden (afvinken) voor ${account.name}`}
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--color-text-faint)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-text)]"
-                    >
-                      {listCompleted ? (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-[color:var(--color-approve)]">
-                          <rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="currentColor" />
-                          <path d="M7.5 12.5l3 3 6-6.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                          <rect x="3.5" y="3.5" width="17" height="17" rx="4" stroke="currentColor" strokeWidth="1.8" />
-                        </svg>
-                      )}
-                    </button>
                     <button
                       onClick={() => handleToggleListVisibility(account.id, list.id, listVisible)}
                       title={listVisible ? `Verbergen voor ${account.name}` : `Tonen voor ${account.name}`}
@@ -412,8 +396,18 @@ export function AdminDashboard({ token }: Props) {
                     </button>
                   </div>
                 </div>
+                <label className="mt-2 flex w-fit cursor-pointer select-none items-center gap-2 text-xs font-medium text-[color:var(--color-text-muted)]">
+                  <input
+                    type="checkbox"
+                    checked={listCompleted}
+                    onChange={() => handleToggleListCompleted(account.id, list.id, listCompleted)}
+                    className="h-4 w-4 cursor-pointer accent-[color:var(--color-approve)]"
+                  />
+                  {listCompleted ? 'Gearchiveerd' : 'Archiveren'}
+                </label>
+
                 {listCompleted ? (
-                  <p className="mt-1 text-[11px] text-[color:var(--color-text-faint)]">Afgerond — blijft in de geschiedenis staan, niet meer te zien op de startpagina.</p>
+                  <p className="mt-1 text-[11px] text-[color:var(--color-text-faint)]">Blijft in de geschiedenis staan voor {account.name}, niet meer te zien op de startpagina.</p>
                 ) : !listVisible && (
                   <p className="mt-1 text-[11px] text-[color:var(--color-text-faint)]">Verborgen voor {account.name} — staat niet op de startpagina.</p>
                 )}
