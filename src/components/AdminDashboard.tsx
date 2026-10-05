@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Account } from '../lib/readyLists';
-import { getManifest, publishCsv, setListVisibility } from '../lib/adminPublish';
+import { getManifest, publishCsv, setListVisibility, setListCompleted } from '../lib/adminPublish';
 import { getFile, slugify } from '../lib/github';
 import { fetchProgress, isComplete, reviewedCount } from '../lib/progress';
 import type { ProgressState } from '../lib/progress';
@@ -171,6 +171,22 @@ export function AdminDashboard({ token }: Props) {
     }
   };
 
+  const handleToggleListCompleted = async (accountId: string, listId: string, currentlyCompleted: boolean) => {
+    setError(null);
+    const patch = (a: Account) =>
+      a.id === accountId ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, completed: !currentlyCompleted } : l)) } : a;
+    setAccounts((prev) => prev?.map(patch) ?? prev);
+    try {
+      await setListCompleted(accountId, listId, !currentlyCompleted, token);
+    } catch (err) {
+      // Roll back the optimistic update if the write failed.
+      const revert = (a: Account) =>
+        a.id === accountId ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, completed: currentlyCompleted } : l)) } : a;
+      setAccounts((prev) => prev?.map(revert) ?? prev);
+      setError(err instanceof Error ? err.message : 'Afronden mislukt.');
+    }
+  };
+
   const handleDownload = async (accountId: string, accountName: string, listId: string, listLabel: string, mode: 'all' | 'approved' | 'rejected') => {
     const key = infoKey(accountId, listId);
     setError(null);
@@ -327,9 +343,10 @@ export function AdminDashboard({ token }: Props) {
             const done = li?.progress ? isComplete({ ...li.progress, totalRows: total }) : false;
             const isBusyHere = busy?.key === key;
             const listVisible = list.visible ?? true;
+            const listCompleted = list.completed ?? false;
 
             return (
-              <div key={key} className={`rounded-xl bg-[color:var(--color-surface-raised)] p-3.5 ${listVisible ? '' : 'opacity-60'}`}>
+              <div key={key} className={`rounded-xl bg-[color:var(--color-surface-raised)] p-3.5 ${listVisible && !listCompleted ? '' : 'opacity-60'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm font-semibold text-[color:var(--color-text)]">{list.label}</p>
                   <div className="flex shrink-0 items-center gap-1.5">
@@ -338,16 +355,34 @@ export function AdminDashboard({ token }: Props) {
                     ) : (
                       <span
                         className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                          !prepared
-                            ? 'bg-[color:var(--color-reject)]/15 text-[color:var(--color-reject)]'
-                            : done
-                              ? 'bg-[color:var(--color-approve)]/15 text-[color:var(--color-approve)]'
-                              : 'bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
+                          listCompleted
+                            ? 'bg-[color:var(--color-text-faint)]/15 text-[color:var(--color-text-faint)]'
+                            : !prepared
+                              ? 'bg-[color:var(--color-reject)]/15 text-[color:var(--color-reject)]'
+                              : done
+                                ? 'bg-[color:var(--color-approve)]/15 text-[color:var(--color-approve)]'
+                                : 'bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
                         }`}
                       >
-                        {!prepared ? 'Nog niet klaargezet' : done ? 'Voltooid' : 'Klaargezet'}
+                        {listCompleted ? 'Afgerond' : !prepared ? 'Nog niet klaargezet' : done ? 'Voltooid' : 'Klaargezet'}
                       </span>
                     )}
+                    <button
+                      onClick={() => handleToggleListCompleted(account.id, list.id, listCompleted)}
+                      title={listCompleted ? `Heropenen voor ${account.name}` : `Afronden (afvinken) voor ${account.name}`}
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--color-text-faint)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-text)]"
+                    >
+                      {listCompleted ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-[color:var(--color-approve)]">
+                          <rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="currentColor" />
+                          <path d="M7.5 12.5l3 3 6-6.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      ) : (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                          <rect x="3.5" y="3.5" width="17" height="17" rx="4" stroke="currentColor" strokeWidth="1.8" />
+                        </svg>
+                      )}
+                    </button>
                     <button
                       onClick={() => handleToggleListVisibility(account.id, list.id, listVisible)}
                       title={listVisible ? `Verbergen voor ${account.name}` : `Tonen voor ${account.name}`}
@@ -377,7 +412,9 @@ export function AdminDashboard({ token }: Props) {
                     </button>
                   </div>
                 </div>
-                {!listVisible && (
+                {listCompleted ? (
+                  <p className="mt-1 text-[11px] text-[color:var(--color-text-faint)]">Afgerond — blijft in de geschiedenis staan, niet meer te zien op de startpagina.</p>
+                ) : !listVisible && (
                   <p className="mt-1 text-[11px] text-[color:var(--color-text-faint)]">Verborgen voor {account.name} — staat niet op de startpagina.</p>
                 )}
 

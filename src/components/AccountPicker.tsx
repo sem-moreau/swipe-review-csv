@@ -20,7 +20,7 @@ export function AccountPicker({ onParsed, trailingAction }: Props) {
       .then((all) =>
         setAccounts(
           all
-            .map((a) => ({ ...a, lists: a.lists.filter((l) => l.visible ?? true) }))
+            .map((a) => ({ ...a, lists: a.lists.filter((l) => (l.visible ?? true) && !l.completed) }))
             .filter((a) => a.lists.length > 0),
         ),
       )

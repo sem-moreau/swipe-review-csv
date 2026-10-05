@@ -3,6 +3,9 @@ export interface ReadyList {
   label: string;
   // Absent/true means visible — keeps existing manifests (written before this field existed) working as-is.
   visible?: boolean;
+  // A list that's been checked off as done. Stays in the manifest/admin view for history,
+  // but drops off the public picker regardless of `visible`.
+  completed?: boolean;
 }
 
 export interface Account {
