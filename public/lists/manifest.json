@@ -59,7 +59,8 @@
       "lists": [
         {
           "id": "novanext-vip-2027",
-          "label": "NovaNext VIP 2027"
+          "label": "NovaNext VIP 2027",
+          "completed": true
         },
         {
           "id": "novanext-vip-2027-2",
