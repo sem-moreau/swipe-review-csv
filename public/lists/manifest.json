@@ -61,6 +61,10 @@
           "label": "NovaNext VIP 2027"
         },
         {
+          "id": "novanext-vip-2027-2",
+          "label": "NovaNext VIP 2027 (2)"
+        },
+        {
           "id": "fw-ap-fundraising",
           "label": "FW/AP Fundraising",
           "visible": false
