@@ -50,6 +50,10 @@
         {
           "id": "early-bird",
           "label": "Early Bird"
+        },
+        {
+          "id": "earlybird-referrals-scouting",
+          "label": "Earlybird (referrals scouting)"
         }
       ]
     },
