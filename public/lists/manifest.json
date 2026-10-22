@@ -52,6 +52,10 @@
           "label": "Early Bird"
         },
         {
+          "id": "earlybird-2",
+          "label": "Earlybird (2)"
+        },
+        {
           "id": "earlybird-referrals-scouting",
           "label": "Earlybird (referrals scouting)"
         },
