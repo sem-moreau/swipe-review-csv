@@ -71,7 +71,8 @@
       "lists": [
         {
           "id": "morphia-customer-support",
-          "label": "Morphia Customer Support"
+          "label": "Morphia Customer Support",
+          "completed": true
         }
       ]
     },
