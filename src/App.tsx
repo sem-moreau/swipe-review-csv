@@ -208,5 +208,5 @@ export default function App() {
     );
   }
 
-  return <ResultsScreen headers={headers} rows={rows} decisions={decisions} onStartOver={handleStartOver} onUndo={handleUndo} />;
+  return <ResultsScreen headers={headers} rows={rows} mapping={mapping} decisions={decisions} onStartOver={handleStartOver} onUndo={handleUndo} />;
 }

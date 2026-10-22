@@ -1,22 +1,23 @@
-import type { CsvRow, Decision } from '../types';
+import type { ColumnMapping, CsvRow, Decision } from '../types';
 import { buildExportCsv, downloadCsv } from '../lib/csv';
 
 interface Props {
   headers: string[];
   rows: CsvRow[];
+  mapping: ColumnMapping;
   decisions: Decision[];
   onStartOver: () => void;
   onUndo: () => void;
 }
 
-export function ResultsScreen({ headers, rows, decisions, onStartOver, onUndo }: Props) {
+export function ResultsScreen({ headers, rows, mapping, decisions, onStartOver, onUndo }: Props) {
   const approved = decisions.filter((d) => d === 'approved').length;
   const rejected = decisions.filter((d) => d === 'rejected').length;
   const later = decisions.filter((d) => d === 'later').length;
   const total = rows.length;
 
   const handleExport = (mode: 'approved' | 'rejected' | 'later' | 'all') => {
-    const { csv, filename } = buildExportCsv(headers, rows, decisions, mode);
+    const { csv, filename } = buildExportCsv(headers, rows, decisions, mode, mapping.name);
     downloadCsv(csv, filename);
   };
 

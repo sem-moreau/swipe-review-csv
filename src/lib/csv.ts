@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import type { CsvRow, Decision } from '../types';
+import { addNameColumns } from './nameSplit';
 
 export interface ParsedCsv {
   headers: string[];
@@ -78,16 +79,19 @@ export function buildExportCsv(
   rows: CsvRow[],
   decisions: Decision[],
   mode: ExportMode,
+  nameColumn?: string,
 ): { csv: string; filename: string } {
   if (mode === 'all') {
-    const outHeaders = [...headers, 'status'];
-    const data = rows.map((row, i) => ({ ...row, status: STATUS_LABEL[decisions[i] ?? 'pending'] }));
+    const { headers: splitHeaders, rows: splitRows } = addNameColumns(headers, rows, nameColumn);
+    const outHeaders = [...splitHeaders, 'status'];
+    const data = splitRows.map((row, i) => ({ ...row, status: STATUS_LABEL[decisions[i] ?? 'pending'] }));
     const csv = Papa.unparse({ fields: outHeaders, data });
     return { csv, filename: 'alle-resultaten.csv' };
   }
 
-  const data = rows.filter((_, i) => decisions[i] === mode);
-  const csv = Papa.unparse({ fields: headers, data });
+  const filtered = rows.filter((_, i) => decisions[i] === mode);
+  const { headers: splitHeaders, rows: splitRows } = addNameColumns(headers, filtered, nameColumn);
+  const csv = Papa.unparse({ fields: splitHeaders, data: splitRows });
   return { csv, filename: EXPORT_FILENAMES[mode] };
 }
 

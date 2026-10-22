@@ -197,7 +197,8 @@ export function AdminDashboard({ token }: Props) {
       const parsed = await parseCsvText(csvFile.content, listLabel);
       const progress = await fetchProgress(accountId, listId);
       const decisions = parsed.rows.map((_, i) => progress.decisions[i] ?? 'pending');
-      const { csv, filename } = buildExportCsv(parsed.headers, parsed.rows, decisions, mode);
+      const mapping = autoDetectMapping(parsed.headers, parsed.rows);
+      const { csv, filename } = buildExportCsv(parsed.headers, parsed.rows, decisions, mode, mapping.name);
       downloadCsv(csv, `${accountName}-${listLabel}-${filename}`);
     } catch {
       setError(`Kon "${listLabel}" (${accountName}) niet downloaden.`);
