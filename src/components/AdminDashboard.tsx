@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Account } from '../lib/readyLists';
-import { getManifest, publishCsv, setListVisibility, setListCompleted } from '../lib/adminPublish';
+import type { Account, Team } from '../lib/readyLists';
+import { getManifest, publishCsv, setListVisibility, setListCompleted, createTeam } from '../lib/adminPublish';
 import { getFile, slugify } from '../lib/github';
 import { fetchProgress, isComplete, reviewedCount } from '../lib/progress';
 import type { ProgressState } from '../lib/progress';
@@ -32,7 +32,8 @@ type Enriching = { key: string; done: number; total: number; failed: number; rat
 const infoKey = (accountId: string, listId: string) => `${accountId}:${listId}`;
 
 export function AdminDashboard({ token }: Props) {
-  const [accounts, setAccounts] = useState<Account[] | null>(null);
+  const [teams, setTeams] = useState<Team[] | null>(null);
+  const [openTeamId, setOpenTeamId] = useState<string | null>(null);
   const [openAccountId, setOpenAccountId] = useState<string | null>(null);
   const [info, setInfo] = useState<Record<string, ListInfo>>({});
   const [busy, setBusy] = useState<Busy>(null);
@@ -43,14 +44,20 @@ export function AdminDashboard({ token }: Props) {
   const [showNewList, setShowNewList] = useState(false);
   const [showNewAccount, setShowNewAccount] = useState(false);
   const [newAccountName, setNewAccountName] = useState('');
+  const [showNewTeam, setShowNewTeam] = useState(false);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [newTeamPassword, setNewTeamPassword] = useState('');
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
   const newListFileInput = useRef<HTMLInputElement>(null);
 
   const refreshManifest = () => {
-    getManifest(token).then(({ data }) => setAccounts(data.accounts));
+    getManifest(token).then(({ data }) => setTeams(data.teams));
   };
 
   useEffect(refreshManifest, [token]);
+
+  const team = teams?.find((t) => t.id === openTeamId);
+  const accounts = team?.accounts;
 
   const loadListInfo = async (accountId: string, listId: string) => {
     const key = infoKey(accountId, listId);
@@ -80,6 +87,15 @@ export function AdminDashboard({ token }: Props) {
     }
   };
 
+  const openTeamFn = (teamId: string) => {
+    setError(null);
+    setSuccess(null);
+    setShowNewAccount(false);
+    setShowNewList(false);
+    setOpenAccountId(null);
+    setOpenTeamId((current) => (current === teamId ? null : teamId));
+  };
+
   const openAccount = (accountId: string) => {
     setError(null);
     setSuccess(null);
@@ -97,7 +113,32 @@ export function AdminDashboard({ token }: Props) {
 
   const account = accounts?.find((a) => a.id === openAccountId);
 
-  const handleUploadNewList = async (accountId: string, accountName: string, file: File) => {
+  const handleCreateTeam = async () => {
+    const id = slugify(newTeamName);
+    const name = newTeamName.trim();
+    if (!id || !name) {
+      setError('Geef het nieuwe team een naam.');
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setBusy({ key: 'new-team', message: 'Team aanmaken…' });
+    try {
+      await createTeam(id, name, newTeamPassword.trim() || undefined, token);
+      setNewTeamName('');
+      setNewTeamPassword('');
+      setShowNewTeam(false);
+      refreshManifest();
+      setOpenTeamId(id);
+      setSuccess(`Team "${name}" aangemaakt.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Team aanmaken mislukt.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleUploadNewList = async (teamId: string, accountId: string, accountName: string, file: File) => {
     const listId = slugify(newListName);
     const listLabel = newListName.trim();
     if (!listId || !listLabel) {
@@ -110,7 +151,9 @@ export function AdminDashboard({ token }: Props) {
     setBusy({ key, message: 'CSV lezen…' });
     try {
       const csvText = await file.text();
-      const { rowCount } = await publishCsv(accountId, accountName, listId, listLabel, csvText, token, (m) => setBusy({ key, message: m }));
+      const { rowCount } = await publishCsv(teamId, accountId, accountName, listId, listLabel, csvText, token, (m) =>
+        setBusy({ key, message: m }),
+      );
       setNewListName('');
       setShowNewList(false);
       refreshManifest();
@@ -123,14 +166,16 @@ export function AdminDashboard({ token }: Props) {
     }
   };
 
-  const handleReplaceList = async (accountId: string, accountName: string, listId: string, listLabel: string, file: File) => {
+  const handleReplaceList = async (teamId: string, accountId: string, accountName: string, listId: string, listLabel: string, file: File) => {
     const key = infoKey(accountId, listId);
     setError(null);
     setSuccess(null);
     setBusy({ key, message: 'CSV lezen…' });
     try {
       const csvText = await file.text();
-      const { rowCount } = await publishCsv(accountId, accountName, listId, listLabel, csvText, token, (m) => setBusy({ key, message: m }));
+      const { rowCount } = await publishCsv(teamId, accountId, accountName, listId, listLabel, csvText, token, (m) =>
+        setBusy({ key, message: m }),
+      );
       void loadListInfo(accountId, listId);
       setSuccess(`"${listLabel}" bijgewerkt voor ${accountName} — ${rowCount} leads. Staat over ~30-60s live.`);
     } catch (err) {
@@ -143,6 +188,7 @@ export function AdminDashboard({ token }: Props) {
   };
 
   const handleCreateAccount = () => {
+    if (!team) return;
     const id = slugify(newAccountName);
     if (!id) {
       setError('Geef het nieuwe profiel een naam.');
@@ -150,39 +196,74 @@ export function AdminDashboard({ token }: Props) {
     }
     setShowNewAccount(false);
     setOpenAccountId(id);
-    setAccounts((prev) => [...(prev ?? []), { id, name: newAccountName.trim(), lists: [] }]);
+    const newAccount: Account = { id, name: newAccountName.trim(), lists: [] };
+    setTeams((prev) => prev?.map((t) => (t.id === team.id ? { ...t, accounts: [...t.accounts, newAccount] } : t)) ?? prev);
     setNewAccountName('');
     setShowNewList(true);
   };
 
-  const handleToggleListVisibility = async (accountId: string, listId: string, currentlyVisible: boolean) => {
+  const handleToggleListVisibility = async (teamId: string, accountId: string, listId: string, currentlyVisible: boolean) => {
     setError(null);
-    const patch = (a: Account) =>
-      a.id === accountId ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, visible: !currentlyVisible } : l)) } : a;
-    setAccounts((prev) => prev?.map(patch) ?? prev);
+    const patchTeam = (t: Team) =>
+      t.id !== teamId
+        ? t
+        : {
+            ...t,
+            accounts: t.accounts.map((a) =>
+              a.id === accountId
+                ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, visible: !currentlyVisible } : l)) }
+                : a,
+            ),
+          };
+    setTeams((prev) => prev?.map(patchTeam) ?? prev);
     try {
-      await setListVisibility(accountId, listId, !currentlyVisible, token);
+      await setListVisibility(teamId, accountId, listId, !currentlyVisible, token);
     } catch (err) {
-      // Roll back the optimistic update if the write failed.
-      const revert = (a: Account) =>
-        a.id === accountId ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, visible: currentlyVisible } : l)) } : a;
-      setAccounts((prev) => prev?.map(revert) ?? prev);
+      const revertTeam = (t: Team) =>
+        t.id !== teamId
+          ? t
+          : {
+              ...t,
+              accounts: t.accounts.map((a) =>
+                a.id === accountId
+                  ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, visible: currentlyVisible } : l)) }
+                  : a,
+              ),
+            };
+      setTeams((prev) => prev?.map(revertTeam) ?? prev);
       setError(err instanceof Error ? err.message : 'Zichtbaarheid wijzigen mislukt.');
     }
   };
 
-  const handleToggleListCompleted = async (accountId: string, listId: string, currentlyCompleted: boolean) => {
+  const handleToggleListCompleted = async (teamId: string, accountId: string, listId: string, currentlyCompleted: boolean) => {
     setError(null);
-    const patch = (a: Account) =>
-      a.id === accountId ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, completed: !currentlyCompleted } : l)) } : a;
-    setAccounts((prev) => prev?.map(patch) ?? prev);
+    const patchTeam = (t: Team) =>
+      t.id !== teamId
+        ? t
+        : {
+            ...t,
+            accounts: t.accounts.map((a) =>
+              a.id === accountId
+                ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, completed: !currentlyCompleted } : l)) }
+                : a,
+            ),
+          };
+    setTeams((prev) => prev?.map(patchTeam) ?? prev);
     try {
-      await setListCompleted(accountId, listId, !currentlyCompleted, token);
+      await setListCompleted(teamId, accountId, listId, !currentlyCompleted, token);
     } catch (err) {
-      // Roll back the optimistic update if the write failed.
-      const revert = (a: Account) =>
-        a.id === accountId ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, completed: currentlyCompleted } : l)) } : a;
-      setAccounts((prev) => prev?.map(revert) ?? prev);
+      const revertTeam = (t: Team) =>
+        t.id !== teamId
+          ? t
+          : {
+              ...t,
+              accounts: t.accounts.map((a) =>
+                a.id === accountId
+                  ? { ...a, lists: a.lists.map((l) => (l.id === listId ? { ...l, completed: currentlyCompleted } : l)) }
+                  : a,
+              ),
+            };
+      setTeams((prev) => prev?.map(revertTeam) ?? prev);
       setError(err instanceof Error ? err.message : 'Afronden mislukt.');
     }
   };
@@ -283,38 +364,90 @@ export function AdminDashboard({ token }: Props) {
     }
   };
 
-  if (!accounts) {
+  if (!teams) {
     return <p className="text-sm text-[color:var(--color-text-faint)]">Laden…</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2">
-        {accounts.map((a) => (
+        {teams.map((t) => (
           <button
-            key={a.id}
-            onClick={() => openAccount(a.id)}
+            key={t.id}
+            onClick={() => openTeamFn(t.id)}
             className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
-              openAccountId === a.id
+              openTeamId === t.id
                 ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]'
                 : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] hover:border-[color:var(--color-text-faint)]'
             }`}
           >
-            {a.name}
+            {t.name}
+            {t.password && <span className="ml-1.5 text-[color:var(--color-text-faint)]">🔒</span>}
           </button>
         ))}
         <button
           onClick={() => {
-            setShowNewAccount((v) => !v);
-            setOpenAccountId(null);
+            setShowNewTeam((v) => !v);
+            setOpenTeamId(null);
           }}
           className="rounded-xl border border-dashed border-[color:var(--color-border)] px-4 py-2.5 text-sm font-medium text-[color:var(--color-text-faint)] hover:text-[color:var(--color-text-muted)]"
         >
-          + Nieuw profiel
+          + Nieuw team
         </button>
       </div>
 
-      {showNewAccount && (
+      {showNewTeam && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3 sm:flex-row sm:items-center">
+          <input
+            value={newTeamName}
+            onChange={(e) => setNewTeamName(e.target.value)}
+            placeholder="Teamnaam, bijv. Morphia"
+            className="flex-1 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] px-3 py-2 text-sm text-[color:var(--color-text)] outline-none focus:border-[color:var(--color-accent)]"
+          />
+          <input
+            value={newTeamPassword}
+            onChange={(e) => setNewTeamPassword(e.target.value)}
+            placeholder="Wachtwoord (optioneel)"
+            className="flex-1 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] px-3 py-2 text-sm text-[color:var(--color-text)] outline-none focus:border-[color:var(--color-accent)]"
+          />
+          <button
+            onClick={handleCreateTeam}
+            disabled={busy !== null}
+            className="rounded-lg bg-[color:var(--color-accent)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            Aanmaken
+          </button>
+        </div>
+      )}
+
+      {team && (
+        <div className="flex flex-wrap gap-2 pl-1">
+          {team.accounts.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => openAccount(a.id)}
+              className={`rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors ${
+                openAccountId === a.id
+                  ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]'
+                  : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] hover:border-[color:var(--color-text-faint)]'
+              }`}
+            >
+              {a.name}
+            </button>
+          ))}
+          <button
+            onClick={() => {
+              setShowNewAccount((v) => !v);
+              setOpenAccountId(null);
+            }}
+            className="rounded-xl border border-dashed border-[color:var(--color-border)] px-3.5 py-2 text-sm font-medium text-[color:var(--color-text-faint)] hover:text-[color:var(--color-text-muted)]"
+          >
+            + Nieuw profiel
+          </button>
+        </div>
+      )}
+
+      {team && showNewAccount && (
         <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3">
           <input
             value={newAccountName}
@@ -328,7 +461,7 @@ export function AdminDashboard({ token }: Props) {
         </div>
       )}
 
-      {account && (
+      {team && account && (
         <div className="flex flex-col gap-3 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3">
           {account.lists.length === 0 && (
             <p className="px-1 py-2 text-sm text-[color:var(--color-text-faint)]">Nog geen lijsten voor {account.name}.</p>
@@ -369,7 +502,7 @@ export function AdminDashboard({ token }: Props) {
                       </span>
                     )}
                     <button
-                      onClick={() => handleToggleListVisibility(account.id, list.id, listVisible)}
+                      onClick={() => handleToggleListVisibility(team.id, account.id, list.id, listVisible)}
                       title={listVisible ? `Verbergen voor ${account.name}` : `Tonen voor ${account.name}`}
                       className="flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--color-text-faint)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-text)]"
                     >
@@ -401,7 +534,7 @@ export function AdminDashboard({ token }: Props) {
                   <input
                     type="checkbox"
                     checked={listCompleted}
-                    onChange={() => handleToggleListCompleted(account.id, list.id, listCompleted)}
+                    onChange={() => handleToggleListCompleted(team.id, account.id, list.id, listCompleted)}
                     className="h-4 w-4 cursor-pointer accent-[color:var(--color-approve)]"
                   />
                   {listCompleted ? 'Gearchiveerd' : 'Archiveren'}
@@ -453,7 +586,7 @@ export function AdminDashboard({ token }: Props) {
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) void handleReplaceList(account.id, account.name, list.id, list.label, file);
+                      if (file) void handleReplaceList(team.id, account.id, account.name, list.id, list.label, file);
                     }}
                   />
                   <button
@@ -535,7 +668,7 @@ export function AdminDashboard({ token }: Props) {
                       setError('Kies eerst een CSV-bestand.');
                       return;
                     }
-                    void handleUploadNewList(account.id, account.name, file);
+                    void handleUploadNewList(team.id, account.id, account.name, file);
                   }}
                   disabled={busy !== null}
                   className="rounded-lg bg-[color:var(--color-accent)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"

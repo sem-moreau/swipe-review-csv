@@ -1,114 +1,166 @@
 {
-  "accounts": [
+  "teams": [
     {
-      "id": "kauan",
-      "name": "Kauan",
-      "lists": [
+      "id": "acelera-portugal",
+      "name": "Acelera Portugal",
+      "password": "12345",
+      "accounts": [
         {
-          "id": "novanext-vip-2027",
-          "label": "NovaNext VIP 2027",
-          "completed": true
+          "id": "kauan",
+          "name": "Kauan",
+          "lists": [
+            {
+              "id": "novanext-vip-2027",
+              "label": "NovaNext VIP 2027",
+              "completed": true
+            },
+            {
+              "id": "novanext-vip-2027-2",
+              "label": "NovaNext VIP 2027 (2)"
+            },
+            {
+              "id": "fw-ap-fundraising",
+              "label": "FW/AP Fundraising",
+              "visible": false
+            }
+          ]
         },
         {
-          "id": "novanext-vip-2027-2",
-          "label": "NovaNext VIP 2027 (2)"
+          "id": "joey",
+          "name": "Joey",
+          "lists": [
+            {
+              "id": "novanext-vip-2027",
+              "label": "NovaNext VIP 2027"
+            },
+            {
+              "id": "fw-ap-fundraising",
+              "label": "FW/AP Fundraising"
+            }
+          ]
         },
         {
-          "id": "fw-ap-fundraising",
-          "label": "FW/AP Fundraising",
-          "visible": false
+          "id": "sem",
+          "name": "Sem",
+          "lists": [
+            {
+              "id": "novanext-vip-2027",
+              "label": "NovaNext VIP 2027"
+            },
+            {
+              "id": "fw-ap-fundraising",
+              "label": "FW/AP Fundraising",
+              "visible": false
+            },
+            {
+              "id": "early-bird",
+              "label": "Early Bird"
+            },
+            {
+              "id": "earlybird-2",
+              "label": "Earlybird (2)"
+            },
+            {
+              "id": "earlybird-referrals-scouting",
+              "label": "Earlybird (referrals scouting)"
+            },
+            {
+              "id": "morphia-customer-support",
+              "label": "Morphia Customer Support"
+            },
+            {
+              "id": "mahan-earlybird-list",
+              "label": "Mahan Earlybird list"
+            }
+          ]
+        },
+        {
+          "id": "nuno",
+          "name": "Nuno",
+          "lists": [
+            {
+              "id": "morphia-customer-support",
+              "label": "Morphia Customer Support",
+              "completed": true
+            }
+          ]
+        },
+        {
+          "id": "wilson",
+          "name": "Wilson",
+          "lists": [
+            {
+              "id": "novanext-vip-2027",
+              "label": "NovaNext VIP 2027",
+              "completed": true
+            },
+            {
+              "id": "novanext-vip-2027-2",
+              "label": "NovaNext VIP 2027 (2)"
+            },
+            {
+              "id": "fw-ap-fundraising",
+              "label": "FW/AP Fundraising",
+              "visible": false
+            }
+          ]
+        },
+        {
+          "id": "mahan",
+          "name": "Mahan",
+          "lists": [
+            {
+              "id": "early-bird",
+              "label": "Early Bird"
+            }
+          ]
         }
       ]
     },
     {
-      "id": "joey",
-      "name": "Joey",
-      "lists": [
+      "id": "morphia",
+      "name": "Morphia",
+      "accounts": [
         {
-          "id": "novanext-vip-2027",
-          "label": "NovaNext VIP 2027"
-        },
-        {
-          "id": "fw-ap-fundraising",
-          "label": "FW/AP Fundraising"
+          "id": "morphia",
+          "name": "Morphia",
+          "lists": [
+            {
+              "id": "chico-1st-degree-linkedin-list",
+              "label": "Chico 1st degree LinkedIn List"
+            },
+            {
+              "id": "jader-1st-degree-linkedin-list",
+              "label": "Jader 1st degree LinkedIn List"
+            },
+            {
+              "id": "diego-1st-degree-linkedin-list",
+              "label": "Diego 1st degree LinkedIn List"
+            }
+          ]
         }
       ]
     },
     {
-      "id": "sem",
-      "name": "Sem",
-      "lists": [
+      "id": "adwarp",
+      "name": "Adwarp",
+      "accounts": [
         {
-          "id": "novanext-vip-2027",
-          "label": "NovaNext VIP 2027"
-        },
-        {
-          "id": "fw-ap-fundraising",
-          "label": "FW/AP Fundraising",
-          "visible": false
-        },
-        {
-          "id": "early-bird",
-          "label": "Early Bird"
-        },
-        {
-          "id": "earlybird-2",
-          "label": "Earlybird (2)"
-        },
-        {
-          "id": "earlybird-referrals-scouting",
-          "label": "Earlybird (referrals scouting)"
-        },
-        {
-          "id": "morphia-customer-support",
-          "label": "Morphia Customer Support"
-        },
-        {
-          "id": "mahan-earlybird-list",
-          "label": "Mahan Earlybird list"
+          "id": "adwarp",
+          "name": "Adwarp",
+          "lists": [
+            {
+              "id": "victor-1st-degree-list",
+              "label": "Victor 1st degree List"
+            }
+          ]
         }
       ]
     },
     {
-      "id": "nuno",
-      "name": "Nuno",
-      "lists": [
-        {
-          "id": "morphia-customer-support",
-          "label": "Morphia Customer Support",
-          "completed": true
-        }
-      ]
-    },
-    {
-      "id": "wilson",
-      "name": "Wilson",
-      "lists": [
-        {
-          "id": "novanext-vip-2027",
-          "label": "NovaNext VIP 2027",
-          "completed": true
-        },
-        {
-          "id": "novanext-vip-2027-2",
-          "label": "NovaNext VIP 2027 (2)"
-        },
-        {
-          "id": "fw-ap-fundraising",
-          "label": "FW/AP Fundraising",
-          "visible": false
-        }
-      ]
-    },
-    {
-      "id": "mahan",
-      "name": "Mahan",
-      "lists": [
-        {
-          "id": "early-bird",
-          "label": "Early Bird"
-        }
-      ]
+      "id": "mysolarwealth",
+      "name": "MySolarWealth",
+      "accounts": []
     }
   ]
 }
