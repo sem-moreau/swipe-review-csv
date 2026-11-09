@@ -44,14 +44,12 @@ export function AccountPicker({ onParsed, trailingAction }: Props) {
     loadTeams()
       .then((all) =>
         setTeams(
-          all
-            .map((t) => ({
-              ...t,
-              accounts: t.accounts
-                .map((a) => ({ ...a, lists: a.lists.filter((l) => (l.visible ?? true) && !l.completed) }))
-                .filter((a) => a.lists.length > 0),
-            }))
-            .filter((t) => t.accounts.length > 0),
+          all.map((t) => ({
+            ...t,
+            accounts: t.accounts
+              .map((a) => ({ ...a, lists: a.lists.filter((l) => (l.visible ?? true) && !l.completed) }))
+              .filter((a) => a.lists.length > 0),
+          })),
         ),
       )
       .catch(() => setTeams([]));
@@ -166,7 +164,13 @@ export function AccountPicker({ onParsed, trailingAction }: Props) {
         </div>
       )}
 
-      {openTeam && teamIsUnlocked(openTeam) && (
+      {openTeam && teamIsUnlocked(openTeam) && openTeam.accounts.length === 0 && (
+        <p className="mt-3 text-center text-sm text-[color:var(--color-text-faint)]">
+          Nog geen lijsten voor {openTeam.name}.
+        </p>
+      )}
+
+      {openTeam && teamIsUnlocked(openTeam) && openTeam.accounts.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
           {openTeam.accounts.map((account) => (
             <button
