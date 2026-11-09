@@ -161,6 +161,11 @@
       "id": "mysolarwealth",
       "name": "MySolarWealth",
       "accounts": []
+    },
+    {
+      "id": "ve2-ventures",
+      "name": "Ve2 Ventures",
+      "accounts": []
     }
   ]
 }
