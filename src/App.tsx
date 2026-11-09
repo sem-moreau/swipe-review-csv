@@ -9,12 +9,13 @@ import { EnrichScreen } from './components/EnrichScreen';
 import { SwipeDeck } from './components/SwipeDeck';
 import { ResultsScreen } from './components/ResultsScreen';
 import { AdminScreen } from './components/AdminScreen';
+import { AccessGate } from './components/AccessGate';
 import { reportProgress } from './lib/progress';
 import { fetchStoredEnrichment } from './lib/enrichmentStore';
 
 type Screen = 'loading' | 'upload' | 'mapping' | 'enrich' | 'review' | 'results' | 'admin';
 
-export default function App() {
+function AppContent() {
   const [screen, setScreen] = useState<Screen>('loading');
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -209,4 +210,12 @@ export default function App() {
   }
 
   return <ResultsScreen headers={headers} rows={rows} mapping={mapping} decisions={decisions} onStartOver={handleStartOver} onUndo={handleUndo} />;
+}
+
+export default function App() {
+  return (
+    <AccessGate>
+      <AppContent />
+    </AccessGate>
+  );
 }
