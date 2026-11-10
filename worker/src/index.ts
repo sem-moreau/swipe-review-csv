@@ -167,7 +167,7 @@ export default {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${env.BIZDEX_API_KEY}`,
       },
-      body: JSON.stringify({ linkedinUrls }),
+      body: JSON.stringify({ linkedinUrls, addToNetwork: false }),
     });
 
     const responseBody = await bizdexResponse.text();
