@@ -9,7 +9,7 @@ export interface Env {
 const MAX_URLS_PER_REQUEST = 25;
 const MAX_LOOKUPS_PER_DAY_PER_IP = 300;
 const MAX_ENRICHMENT_BYTES = 8 * 1024 * 1024;
-const BIZDEX_ENDPOINT = 'https://api.bizdex.app/external/research/person';
+const BIZDEX_ENDPOINT = 'https://api.earlybird.inc/external/research/person';
 
 const DECISION_VALUES = new Set(['pending', 'approved', 'rejected', 'later']);
 const SLUG_RE = /^[a-z0-9-]+$/;
