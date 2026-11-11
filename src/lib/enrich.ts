@@ -1,5 +1,5 @@
 import type { ColumnMapping, CsvRow, EnrichmentMap, EnrichmentRecord } from '../types';
-import { normalizeLinkedinUrl } from './linkedin';
+import { isEnrichableLinkedinUrl, normalizeLinkedinUrl } from './linkedin';
 
 const WORKER_URL = 'https://swipe-review-bizdex-proxy.sem-moreau.workers.dev/enrich';
 
@@ -8,14 +8,17 @@ export function collectLinkedinUrls(rows: CsvRow[], mapping: ColumnMapping): str
   const seen = new Set<string>();
   for (const row of rows) {
     const raw = row[mapping.linkedin]?.trim();
-    if (raw) seen.add(normalizeLinkedinUrl(raw));
+    if (!raw) continue;
+    const url = normalizeLinkedinUrl(raw);
+    if (isEnrichableLinkedinUrl(url)) seen.add(url);
   }
   return [...seen];
 }
 
 interface BizdexBatchResponse {
   results?: Array<EnrichmentRecord & { person?: { linkedinUrl?: string } }>;
-  invalidLinkedinUrls?: string[];
+  // The API returns objects ({ index, url, reason }); older versions sent plain strings.
+  invalidLinkedinUrls?: Array<string | { url?: string }>;
 }
 
 export class RateLimitError extends Error {}
@@ -47,7 +50,12 @@ export async function enrichBatch(urls: string[]): Promise<EnrichmentMap> {
   if (!res.ok) throw new Error(`Bizdex-verrijking mislukt (${res.status})`);
 
   const data = (await res.json()) as BizdexBatchResponse;
-  const invalid = new Set((data.invalidLinkedinUrls ?? []).map(normalizeLinkedinUrl));
+  const invalid = new Set(
+    (data.invalidLinkedinUrls ?? [])
+      .map((entry) => (typeof entry === 'string' ? entry : entry?.url))
+      .filter((u): u is string => typeof u === 'string')
+      .map(normalizeLinkedinUrl),
+  );
   const requested = urls.filter((u) => !invalid.has(u));
   const results = data.results ?? [];
 

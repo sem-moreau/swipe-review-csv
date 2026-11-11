@@ -1,4 +1,5 @@
 import type { BizdexTopic, ColumnMapping, CsvRow, EnrichmentRecord } from '../types';
+import { toProfileUrl } from './linkedin';
 
 export interface CardModel {
   name: string;
@@ -71,7 +72,7 @@ export function buildCardModel(
     title,
     company,
     location: clean(mapping.location ? row[mapping.location] : undefined) ?? locationFromEnrichment(enrichment),
-    linkedinUrl: linkedinRaw ? normalizeUrl(linkedinRaw) : undefined,
+    linkedinUrl: linkedinRaw ? toProfileUrl(normalizeUrl(linkedinRaw)) : undefined,
     industry: clean(mapping.industry ? row[mapping.industry] : undefined) ?? industryFromEnrichment(enrichment),
     companySize: clean(mapping.companySize ? row[mapping.companySize] : undefined),
     notes: clean(mapping.notes ? row[mapping.notes] : undefined),
