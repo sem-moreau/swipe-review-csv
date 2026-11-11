@@ -153,7 +153,22 @@
     {
       "id": "ve2-ventures",
       "name": "Ve2 Ventures",
-      "accounts": []
+      "accounts": [
+        {
+          "id": "padelplay",
+          "name": "Padelplay",
+          "lists": [
+            {
+              "id": "pitch-first",
+              "label": "Pitch first (Tier A)"
+            },
+            {
+              "id": "second-wave",
+              "label": "Second wave (Tier B)"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
